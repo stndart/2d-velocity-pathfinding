@@ -1,117 +1,274 @@
+from typing import Any
 from math import sqrt
 
 EPS = 1e-5
 
-def is_close(a, b, eps=EPS):
+def is_close(a: float, b: float, eps: float = EPS):
     return abs(a - b) < eps
 
+def sign(a: float):
+    if a > EPS:
+        return +1
+    elif a < -EPS:
+        return -1
+    return 0
+
+# объявления классов для корректной типизации методов
+class Circle:
+    pass
+class Triangle:
+    pass
+class Rectangle:
+    pass
+class Point:
+    pass
 
 class Point:
-    def __init__(self, x, y):
+    def __init__(self, x: float, y: float):
         self.x = x
         self.y = y
 
-    def has_intersect(self, other):
+    def has_intersect(self, other: Point|Circle|Rectangle|Triangle) -> bool:
         if isinstance(other, Point):
             return is_close(self.x, other.x) and is_close(self.y, other.y)
-        elif isinstance(other, Circle):
-            return sqrt((self.x - other.x)**2 + (self.y - other.y)**2) <= other.radius + EPS
-        elif isinstance(other, Rectangle):
-            return (other.x1 - EPS <= self.x <= other.x2 + EPS and
-                    other.y1 - EPS <= self.y <= other.y2 + EPS)
-        elif isinstance(other, Triangle):
+        elif isinstance(other, (Circle, Rectangle, Triangle)):
             return other.contains(self)
         return False
+    
+    def __abs__(self) -> float:
+        return sqrt(self.x ** 2 + self.y ** 2)
+    
+    def __mul__(self, other: float) -> Point:
+        return Point(self.x * other, self.y * other)
+    
+    def __truediv__(self, other: float) -> Point:
+        return Point(self.x / other, self.y / other)
+    
+    def __add__(self, other: Point) -> Point:
+        return Point(self.x + other.x, self.y + other.y)
+    
+    def __sub__(self, other: Point) -> Point:
+        return Point(self.x - other.x, self.y - other.y)
 
+class Line:
+    def __init__(self, p1: Point, p2: Point):
+        if is_close(abs(p1 - p2), 0):
+            raise ValueError("Отрезок не может быть задан двумя одинаковыми точками.")
+        self.p1 = p1
+        self.p2 = p2
 
-class Circle:
-    def __init__(self, x, y, radius):
-        self.x = x
-        self.y = y
-        self.radius = max(radius, 0)  # Убедимся, что радиус не отрицательный
+    def distance(self, p: Point) -> float:
+        '''
+        Возвращает знаковое расстояние от точки до прямой.
+        Если расстояние меньше нуля, то точка справа от прямой, если больше, то слева.
+        '''
+        # Векторное представление
+        line_vec = self.p2 - self.p1  # Вектор направления прямой
+        point_vec = p - self.p1       # Вектор от точки `p1` до `p`
+        
+        # Векторное произведение для нахождения площади параллелограмма
+        cross_product = line_vec.x * point_vec.y - line_vec.y * point_vec.x
+        line_length = abs(line_vec)  # Длина вектора прямой
 
-    def has_intersect(self, other):
-        if self.radius < EPS:  # Если радиус 0, окружность превращается в точку
-            return Point(self.x, self.y).has_intersect(other)
-        if isinstance(other, Point):
-            return other.has_intersect(self)
-        elif isinstance(other, Circle):
-            dist = sqrt((self.x - other.x)**2 + (self.y - other.y)**2)
-            return dist <= self.radius + other.radius + EPS
-        elif isinstance(other, Rectangle):
-            closest_x = max(other.x1, min(self.x, other.x2))
-            closest_y = max(other.y1, min(self.y, other.y2))
-            dist = sqrt((self.x - closest_x)**2 + (self.y - closest_y)**2)
-            return dist <= self.radius + EPS
-        elif isinstance(other, Triangle):
-            return any(self.has_intersect(Point(v[0], v[1])) for v in other.vertices) or other.intersects_circle(self)
+        # Расстояние = площадь / длина прямой
+        return cross_product / line_length if line_length > EPS else 0.0
+
+    def has_intersect(self, other: Line) -> bool:
+        """
+        Проверяет, пересекаются ли два отрезка.
+        """
+        def orientation(p: Point, q: Point, r: Point) -> int:
+            """
+            Вычисляет ориентацию трёх точек:
+            0 -> коллинеарны,
+            1 -> по часовой стрелке,
+            2 -> против часовой стрелки.
+            """
+            val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y)
+            if is_close(val, 0):
+                return 0
+            return 1 if val > 0 else 2
+
+        def on_segment(p: Point, q: Point, r: Point) -> bool:
+            """
+            Проверяет, лежит ли точка q на отрезке pr.
+            """
+            return (min(p.x, r.x) - EPS <= q.x <= max(p.x, r.x) + EPS and
+                    min(p.y, r.y) - EPS <= q.y <= max(p.y, r.y) + EPS)
+
+        # Концы текущего и другого отрезка
+        p1, q1 = self.p1, self.p2
+        p2, q2 = other.p1, other.p2
+
+        # Определяем ориентации
+        o1 = orientation(p1, q1, p2)
+        o2 = orientation(p1, q1, q2)
+        o3 = orientation(p2, q2, p1)
+        o4 = orientation(p2, q2, q1)
+
+        # Основной случай: разные ориентации
+        if o1 != o2 and o3 != o4:
+            return True
+
+        # Специальные случаи: проверка на коллинеарность
+        if o1 == 0 and on_segment(p1, p2, q1):
+            return True
+        if o2 == 0 and on_segment(p1, q2, q1):
+            return True
+        if o3 == 0 and on_segment(p2, p1, q2):
+            return True
+        if o4 == 0 and on_segment(p2, q1, q2):
+            return True
+
         return False
 
+class Circle:
+    def __init__(self, x: float, y: float, radius: float):
+        self.center = Point(x, y)
+        self.radius = max(radius, 0)  # Убедимся, что радиус не отрицательный
+    
+    def contains(self, other: Point) -> bool:
+        return is_close(abs(self.center - other), self.radius)
 
-class Rectangle:
-    def __init__(self, x1, y1, x2, y2):
-        self.x1, self.y1 = min(x1, x2), min(y1, y2)
-        self.x2, self.y2 = max(x1, x2), max(y1, y2)
-
-    def has_intersect(self, other):
-        if self.x1 == self.x2 or self.y1 == self.y2:  # Вырожденный случай (линия или точка)
-            return Point(self.x1, self.y1).has_intersect(other)
+    def has_intersect(self, other: Circle|Triangle|Rectangle) -> bool:
+        if self.radius < EPS:  # Если радиус 0, окружность превращается в точку
+            return self.center.has_intersect(other)
         if isinstance(other, Point):
-            return other.has_intersect(self)
+            return self.contains(other)
         elif isinstance(other, Circle):
-            return other.has_intersect(self)
+            dist = abs(self.center, other.center)
+            return is_close(dist, self.radius + other.radius)
         elif isinstance(other, Rectangle):
-            return not (self.x2 + EPS < other.x1 or self.x1 > other.x2 + EPS or
-                        self.y2 + EPS < other.y1 or self.y1 > other.y2 + EPS)
+            return other.has_intersect(self)
         elif isinstance(other, Triangle):
-            return any(other.contains(Point(self.x1, self.y1)) or 
-                       other.contains(Point(self.x2, self.y2)) or 
-                       other.contains(Point(self.x1, self.y2)) or 
-                       other.contains(Point(self.x2, self.y1)))
+            return other.has_intersect(self)
         return False
 
 
 class Triangle:
-    def __init__(self, v1, v2, v3):
-        self.vertices = [v1, v2, v3]
-        if self.is_degenerate():
-            raise ValueError("Треугольник вырожденный: вершины совпадают или лежат на одной прямой")
+    def __init__(self, v1: Point, v2: Point, v3: Point):
+        self.vertices: list[Point] = [v1, v2, v3]
 
-    def area(self, a, b, c):
-        return abs((a[0] * (b[1] - c[1]) + 
-                    b[0] * (c[1] - a[1]) + 
-                    c[0] * (a[1] - b[1])) / 2.0)
+    def area(self, a: Point, b: Point, c: Point) -> bool:
+        return abs((a.x * (b.y - c.y) + 
+                    b.x * (c.y - a.y) + 
+                    c.x * (a.y - b.y)) / 2.0)
 
-    def is_degenerate(self):
+    def is_degenerate(self) -> bool:
+        return is_close(self.area(*self.vertices), 0)
+    
+    def corners(self) -> list[Point]:
+        return self.vertices
+    
+    def edges(self) -> list[Line]:
         a, b, c = self.vertices
-        return is_close(self.area(a, b, c), 0)
+        return [Line(a, b), Line(b, c), Line(c, a)]
 
-    def contains(self, point):
+    def contains(self, p: Point) -> bool:
         a, b, c = self.vertices
-        p = (point.x, point.y)
         area_orig = self.area(a, b, c)
         area1 = self.area(p, b, c)
         area2 = self.area(a, p, c)
         area3 = self.area(a, b, p)
         return is_close(area_orig, area1 + area2 + area3)
 
-    def intersects_circle(self, circle):
-        for v in self.vertices:
-            if circle.has_intersect(Point(v[0], v[1])):
+    def _intersects_circle(self, circle: Circle) -> bool:
+        a, b, c = self.vertices
+        d1 = Line(a, b).distance(circle.center)
+        d2 = Line(b, c).distance(circle.center)
+        d3 = Line(c, a).distance(circle.center)
+        
+        if sign(d1) < 0 and sign(d2) < 0 and sign(d3) < 0: # Если центр окружности внутри треугольника
+            return True
+        elif circle.contains(a) or circle.contains(b) or circle.contains(c): # Если хотя бы одна из вершин треугольника внутри окружности
+            return True
+        elif min(abs(d1), abs(d2), abs(d3)) < circle.radius + EPS: # Если окружность пересекает хотя бы одну сторону треугольника
+            return True
+        return False
+    
+    def _intersects_triangle(self, other: Triangle) -> bool:
+        e1s = self.edges()
+        e2s = other.edges()
+        
+        for e1 in e1s:
+            if any([e1.has_intersect(e2) for e2 in e2s]):
                 return True
+        if any([self.contains(p) for p in other.corners()]):
+            return True
+        if any([other.contains(p) for p in self.corners()]):
+            return True
         return False
 
     def has_intersect(self, other):
         if isinstance(other, Point):
             return other.has_intersect(self)
         elif isinstance(other, Circle):
-            return other.has_intersect(self)
-        elif isinstance(other, Rectangle):
-            return any(self.contains(Point(other.x1, other.y1)) or 
-                       self.contains(Point(other.x2, other.y2)) or 
-                       self.contains(Point(other.x1, other.y2)) or 
-                       self.contains(Point(other.x2, other.y1)))
+            return self._intersects_circle(other)
         elif isinstance(other, Triangle):
-            return any(self.contains(Point(v[0], v[1])) or 
-                       other.contains(Point(v2[0], v2[1])) for v in self.vertices)
+            return self._intersects_triangle(other)
+        elif isinstance(other, Rectangle):
+            return other.has_intersect(self)
+        return False
+
+class Rectangle:
+    def __init__(self, bottom_left: Point, top_right: Point):
+        self.bottom_left = bottom_left
+        self.top_right = top_right
+
+        # Проверяем, что углы корректны
+        if bottom_left.x > top_right.x or bottom_left.y > top_right.y:
+            raise ValueError("Неверные координаты углов прямоугольника.")
+    
+    def corners(self) -> list[Point]:
+        p1, p3 = self.bottom_left, self.top_right
+        p2 = Point(p1.x, p2.y)
+        p4 = Point(p2.x, p1.y)
+        return [p1, p2, p3, p4]
+    
+    def edges(self) -> list[Line]:
+        p1, p2, p3, p4 = self.corners()
+        return [Line(p1, p2), Line(p2, p3), Line(p3, p4), Line(p4, p1)]
+
+    def contains(self, p: Point) -> bool:
+        """
+        Проверяет, находится ли точка внутри прямоугольника (включая границы).
+        """
+        return (self.bottom_left.x - EPS <= p.x <= self.top_right.x + EPS and
+                self.bottom_left.y - EPS <= p.y <= self.top_right.y + EPS)
+
+    def has_intersect(self, other: Circle | Triangle | Rectangle) -> bool:
+        """
+        Проверяет пересечение прямоугольника с другими фигурами.
+        """
+        if isinstance(other, Point):
+            return self.contains(other)
+
+        if isinstance(other, Circle):
+            return self._intersects_circle(other)
+
+        if isinstance(other, (Triangle, Rectangle)):
+            return self._intersects_rectangle(other)
+
+        return False
+
+    def _intersects_circle(self, circle: Circle) -> bool:
+        """
+        Проверяет пересечение прямоугольника и окружности.
+        """
+        p1, p2, p3, p4 = self.corners()
+        
+        t1, t2 = Triangle(p1, p2, p3), Triangle(p1, p4, p3)
+        return t1.has_intersect(circle) or t2.has_intersect(circle)
+
+    def _intersects_rectangle(self, other: Rectangle|Triangle) -> bool:
+        e1s = self.edges()
+        e2s = other.edges()
+        
+        for e1 in e1s:
+            if any([e1.has_intersect(e2) for e2 in e2s]):
+                return True
+        if any([self.contains(p) for p in other.corners()]):
+            return True
+        if any([other.contains(p) for p in self.corners()]):
+            return True
         return False
