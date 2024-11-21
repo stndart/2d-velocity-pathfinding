@@ -5,6 +5,7 @@ EPS = 1e-5
 def is_close(a, b, eps=EPS):
     return abs(a - b) < eps
 
+
 class Point:
     def __init__(self, x, y):
         self.x = x
@@ -27,9 +28,11 @@ class Circle:
     def __init__(self, x, y, radius):
         self.x = x
         self.y = y
-        self.radius = radius
+        self.radius = max(radius, 0)  # Убедимся, что радиус не отрицательный
 
     def has_intersect(self, other):
+        if self.radius < EPS:  # Если радиус 0, окружность превращается в точку
+            return Point(self.x, self.y).has_intersect(other)
         if isinstance(other, Point):
             return other.has_intersect(self)
         elif isinstance(other, Circle):
@@ -51,6 +54,8 @@ class Rectangle:
         self.x2, self.y2 = max(x1, x2), max(y1, y2)
 
     def has_intersect(self, other):
+        if self.x1 == self.x2 or self.y1 == self.y2:  # Вырожденный случай (линия или точка)
+            return Point(self.x1, self.y1).has_intersect(other)
         if isinstance(other, Point):
             return other.has_intersect(self)
         elif isinstance(other, Circle):
@@ -69,11 +74,17 @@ class Rectangle:
 class Triangle:
     def __init__(self, v1, v2, v3):
         self.vertices = [v1, v2, v3]
+        if self.is_degenerate():
+            raise ValueError("Треугольник вырожденный: вершины совпадают или лежат на одной прямой")
 
     def area(self, a, b, c):
         return abs((a[0] * (b[1] - c[1]) + 
                     b[0] * (c[1] - a[1]) + 
                     c[0] * (a[1] - b[1])) / 2.0)
+
+    def is_degenerate(self):
+        a, b, c = self.vertices
+        return is_close(self.area(a, b, c), 0)
 
     def contains(self, point):
         a, b, c = self.vertices
