@@ -1,3 +1,6 @@
 # Wing IDE project files
 *.wpr
 *.wpu
+
+# compiled .pyc
+*.pyc
