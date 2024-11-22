@@ -1,4 +1,3 @@
-from typing import Any
 from math import sqrt
 
 EPS = 1e-5
@@ -13,14 +12,28 @@ def sign(a: float):
         return -1
     return 0
 
-# объявления классов для корректной типизации методов
-class Circle:
-    pass
-class Triangle:
-    pass
-class Rectangle:
-    pass
 class Point:
+    pass
+
+class Line:
+    pass
+
+class Figure:
+    def __init__(self):
+        pass
+    
+    def has_intersect(self, other: 'Figure') -> bool:
+        return False
+    
+    def contains(self, other: Point) -> bool:
+        return False
+
+# объявления классов для корректной типизации методов
+class Circle(Figure):
+    pass
+class Triangle(Figure):
+    pass
+class Rectangle(Figure):
     pass
 
 class Point:
@@ -28,10 +41,10 @@ class Point:
         self.x = x
         self.y = y
 
-    def has_intersect(self, other: Point|Circle|Rectangle|Triangle) -> bool:
+    def has_intersect(self, other: Point|Figure) -> bool:
         if isinstance(other, Point):
             return is_close(self.x, other.x) and is_close(self.y, other.y)
-        elif isinstance(other, (Circle, Rectangle, Triangle)):
+        elif isinstance(other, Figure):
             return other.contains(self)
         return False
     
@@ -122,19 +135,17 @@ class Line:
 
         return False
 
-class Circle:
+class Circle(Figure):
     def __init__(self, x: float, y: float, radius: float):
         self.center = Point(x, y)
         self.radius = max(radius, 0)  # Убедимся, что радиус не отрицательный
     
     def contains(self, other: Point) -> bool:
-        return is_close(abs(self.center - other), self.radius)
+        return abs(self.center - other) < self.radius + EPS
 
-    def has_intersect(self, other: Circle|Triangle|Rectangle) -> bool:
+    def has_intersect(self, other: Figure) -> bool:
         if self.radius < EPS:  # Если радиус 0, окружность превращается в точку
-            return self.center.has_intersect(other)
-        if isinstance(other, Point):
-            return self.contains(other)
+            return other.contains(self.center)
         elif isinstance(other, Circle):
             dist = abs(self.center, other.center)
             return is_close(dist, self.radius + other.radius)
@@ -145,7 +156,7 @@ class Circle:
         return False
 
 
-class Triangle:
+class Triangle(Figure):
     def __init__(self, v1: Point, v2: Point, v3: Point):
         self.vertices: list[Point] = [v1, v2, v3]
 
@@ -199,10 +210,8 @@ class Triangle:
             return True
         return False
 
-    def has_intersect(self, other):
-        if isinstance(other, Point):
-            return other.has_intersect(self)
-        elif isinstance(other, Circle):
+    def has_intersect(self, other: Figure) -> bool:
+        if isinstance(other, Circle):
             return self._intersects_circle(other)
         elif isinstance(other, Triangle):
             return self._intersects_triangle(other)
@@ -210,7 +219,7 @@ class Triangle:
             return other.has_intersect(self)
         return False
 
-class Rectangle:
+class Rectangle(Figure):
     def __init__(self, bottom_left: Point, top_right: Point):
         self.bottom_left = bottom_left
         self.top_right = top_right
@@ -236,16 +245,12 @@ class Rectangle:
         return (self.bottom_left.x - EPS <= p.x <= self.top_right.x + EPS and
                 self.bottom_left.y - EPS <= p.y <= self.top_right.y + EPS)
 
-    def has_intersect(self, other: Circle | Triangle | Rectangle) -> bool:
+    def has_intersect(self, other: Figure) -> bool:
         """
         Проверяет пересечение прямоугольника с другими фигурами.
         """
-        if isinstance(other, Point):
-            return self.contains(other)
-
         if isinstance(other, Circle):
             return self._intersects_circle(other)
-
         if isinstance(other, (Triangle, Rectangle)):
             return self._intersects_rectangle(other)
 
