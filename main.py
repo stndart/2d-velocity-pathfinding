@@ -7,7 +7,7 @@ from gui import MainWindow
 from backend import Core, logger
 
 from backend import SimpleCar
-from backend import Circle, Triangle, Point
+from backend import Circle, Triangle, Point, Path
 
 from PyQt5.QtGui import QPolygonF, QBrush, QPen
 from PyQt5.QtCore import QPointF
@@ -26,6 +26,11 @@ if __name__ == '__main__':
         Point(1, 5),
         Point(2, 1),
         Point(4, 3)
+    ))
+    back.add_figure(Path(
+        [Point(0, 0),
+         Point(2, 0),
+         Point(3, 4)]
     ))
     
     car = SimpleCar(0, 0)
