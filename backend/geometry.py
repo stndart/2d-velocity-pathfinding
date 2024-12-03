@@ -1,3 +1,6 @@
+from typing import Generator
+from itertools import pairwise
+
 from math import sqrt
 
 EPS = 1e-5
@@ -74,6 +77,7 @@ class Line:
         '''
         Возвращает знаковое расстояние от точки до прямой.
         Если расстояние меньше нуля, то точка справа от прямой, если больше, то слева.
+        (сторона выбирается при обходе прямой от p1 к p2)
         '''
         # Векторное представление
         line_vec = self.p2 - self.p1  # Вектор направления прямой
@@ -143,18 +147,19 @@ class Circle(Figure):
     def contains(self, other: Point) -> bool:
         return abs(self.center - other) < self.radius + EPS
 
-    def has_intersect(self, other: Figure) -> bool:
+    def has_intersect(self, other: Figure | Line) -> bool:
         if self.radius < EPS:  # Если радиус 0, окружность превращается в точку
             return other.contains(self.center)
+        elif isinstance(other, Line):
+            return abs(other.distance(self.center)) < EPS
         elif isinstance(other, Circle):
-            dist = abs(self.center, other.center)
+            dist = abs(self.center - other.center)
             return is_close(dist, self.radius + other.radius)
         elif isinstance(other, Rectangle):
             return other.has_intersect(self)
         elif isinstance(other, Triangle):
             return other.has_intersect(self)
         return False
-
 
 class Triangle(Figure):
     def __init__(self, v1: Point, v2: Point, v3: Point):
@@ -210,8 +215,10 @@ class Triangle(Figure):
             return True
         return False
 
-    def has_intersect(self, other: Figure) -> bool:
-        if isinstance(other, Circle):
+    def has_intersect(self, other: Figure | Line) -> bool:
+        if isinstance(other, Line):
+            return any([other.has_intersect(e) for e in self.edges()])
+        elif isinstance(other, Circle):
             return self._intersects_circle(other)
         elif isinstance(other, Triangle):
             return self._intersects_triangle(other)
@@ -230,8 +237,8 @@ class Rectangle(Figure):
     
     def corners(self) -> list[Point]:
         p1, p3 = self.bottom_left, self.top_right
-        p2 = Point(p1.x, p2.y)
-        p4 = Point(p2.x, p1.y)
+        p2 = Point(p1.x, p3.y)
+        p4 = Point(p3.x, p1.y)
         return [p1, p2, p3, p4]
     
     def edges(self) -> list[Line]:
@@ -245,11 +252,13 @@ class Rectangle(Figure):
         return (self.bottom_left.x - EPS <= p.x <= self.top_right.x + EPS and
                 self.bottom_left.y - EPS <= p.y <= self.top_right.y + EPS)
 
-    def has_intersect(self, other: Figure) -> bool:
+    def has_intersect(self, other: Figure | Line) -> bool:
         """
         Проверяет пересечение прямоугольника с другими фигурами.
         """
-        if isinstance(other, Circle):
+        if isinstance(other, Line):
+            return any([other.has_intersect(e) for e in self.edges()])
+        elif isinstance(other, Circle):
             return self._intersects_circle(other)
         if isinstance(other, (Triangle, Rectangle)):
             return self._intersects_rectangle(other)
@@ -277,3 +286,37 @@ class Rectangle(Figure):
         if any([other.contains(p) for p in self.corners()]):
             return True
         return False
+
+class Path(Figure):
+    def __init__(self, path: list[Point] = []):
+        self.path = path
+
+    def points(self) -> Generator[Point, None, None]:
+        for p in self.path:
+            yield p
+    
+    def segments(self) -> Generator[tuple[Point], None, None]:
+        for p1, p2 in pairwise(self.path):
+            yield p1, p2
+    
+    def add_point(self, point: Point, i: int = None):
+        if i is None:
+            i = len(self.path)
+        assert i <= len(self.path) and i >= 0
+        self.path = self.path[:i] + [point] + self.path[i:]
+    
+    def remove_point(self, i: int):
+        assert i < len(self.path) and i >= 0
+        self.path.pop(i)
+
+    def has_intersect(self, other: Figure | Point | Line):
+        for p in self.points():
+            if other.has_intersect(p):
+                return True
+        for p1, p2 in self.segments():
+            if other.has_intersect(Line(p1, p2)):
+                return True
+        return False
+    
+    def contains(self, other: Point):
+        return self.has_intersect(other)
