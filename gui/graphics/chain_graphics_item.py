@@ -19,6 +19,9 @@ class RouteChain(QAbstractGraphicsShapeItem):
         self.pwidth = pwidth
         self.setPos(QPointF(0, 0))
     
+    def update_path(self, new_path: Path):
+        self.path = new_path
+    
     def boundingRect(self) -> QRectF:
         topLeft = None
         bottomRight = None
@@ -34,17 +37,19 @@ class RouteChain(QAbstractGraphicsShapeItem):
             if bottomRight.y() < p.y:
                 bottomRight = QPointF(bottomRight.x(), p.y)
         
-        return QRectF(topLeft, bottomRight) if topLeft is not None else QRectF()
+        #topLeft = QPointF(topLeft.x(), -topLeft.y())
+        #bottomRight = QPointF(bottomRight.x(), -bottomRight.y())
+        #return QRectF(topLeft, bottomRight) if topLeft is not None else QRectF()
+        return QRectF() # bugs without it
     
     def paint(self, painter: QPainter, option: Optional[str] = None, widget: Optional[QWidget] = None):
-        print('paint')
         oldpen = painter.pen()
         oldbrush = painter.brush()
         
         painter.setPen(self.pen())
         painter.setBrush(self.brush())
         for p1, p2 in self.path.segments():
-            painter.drawLine(p1.x, -p1.y, p2.x, -p2.y)
+            painter.drawLine(QPointF(p1.x, -p1.y), QPointF(p2.x, -p2.y))
         for p in self.path.points():
             painter.drawEllipse(QPointF(p.x, -p.y), self.pwidth, self.pwidth)
         

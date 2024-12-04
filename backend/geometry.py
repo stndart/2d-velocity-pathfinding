@@ -1,7 +1,7 @@
 from typing import Generator
 from itertools import pairwise
 
-from math import sqrt
+from math import sqrt, atan2
 
 EPS = 1e-5
 
@@ -51,6 +51,9 @@ class Point:
             return other.contains(self)
         return False
     
+    def coords(self) -> tuple[float]:
+        return self.x, self.y
+
     def __abs__(self) -> float:
         return sqrt(self.x ** 2 + self.y ** 2)
     
@@ -65,6 +68,12 @@ class Point:
     
     def __sub__(self, other: Point) -> Point:
         return Point(self.x - other.x, self.y - other.y)
+    
+    def __repr__(self):
+        return f'[{self.x:.3f}, {self.y:.3f}]'
+
+    def angle_to(v1, v2):
+        return atan2(v1.x * v2.y - v1.y * v2.x, v1.x * v2.x + v1.y * v2.y)
 
 class Line:
     def __init__(self, p1: Point, p2: Point):
@@ -308,6 +317,10 @@ class Path(Figure):
     def remove_point(self, i: int):
         assert i < len(self.path) and i >= 0
         self.path.pop(i)
+    
+    def update_point(self, i: int, np: Point):
+        assert i < len(self.path) and i >= 0
+        self.path[i] = np
 
     def has_intersect(self, other: Figure | Point | Line):
         for p in self.points():
@@ -320,3 +333,19 @@ class Path(Figure):
     
     def contains(self, other: Point):
         return self.has_intersect(other)
+    
+    def start_point(self):
+        if len(self.path) < 1:
+            return None
+        return self.path[0]
+    
+    def current_point(self):
+        if len(self.path) < 2:
+            return None
+        return self.path[1]
+    
+    def next_point(self):
+        if len(self.path) >= 2:
+            self.remove_point(0)
+        return self.current_point()
+        

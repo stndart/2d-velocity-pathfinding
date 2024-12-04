@@ -14,6 +14,7 @@ class Agent:
     def __init__(self, x: float, y: float):
         self.x = x
         self.y = y
+        self.direction = 0
         
         self.overseer: Overseer = None
 
@@ -24,7 +25,10 @@ class Agent:
         if self.overseer:
             self.overseer.update_object(self)
     
-    def coords(self):
+    def pos(self) -> Point:
+        return Point(self.x, self.y)
+    
+    def coords(self) -> tuple[float]:
         return self.x, self.y
     
     def repr(self) -> list[Point]:

@@ -19,7 +19,7 @@ class GridDisplay(QWidget):
         super().__init__(parent)
         
         self.scene = QGraphicsScene(self)
-        self.scene_rect = QRectF(-20., -15., 40., 30.)
+        self.scene_rect = QRectF(-10., -15., 40., 30.)
         self.scene.setSceneRect(self.scene_rect)
         self.view = QGraphicsView(self.scene, self)
         self.view.scale(25, 25)

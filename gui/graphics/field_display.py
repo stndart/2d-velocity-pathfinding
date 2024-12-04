@@ -1,5 +1,6 @@
 import numpy as np
 from typing import Optional
+from math import degrees
 
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtWidgets import QGraphicsItem, QGraphicsEllipseItem
@@ -51,12 +52,14 @@ class FieldDisplay(GridDisplay):
                 elif isinstance(item, bc.Path):
                     titem = RouteChain(parent=self, path=item, pen=self.pen2, brush=self.brush3)
                     self.scene.addItem(titem)
+                    titem.setZValue(10)
                     self.registered_items[item] = titem
         
         for item in self.core.agents():
             if item not in self.registered_items:
-                agent_poly = self.scene.addPolygon(QPolygonF([QPointF(p.x, p.y) for p in item.repr()]), pen=self.pen, brush=self.brush2)
-                agent_poly.setPos(*item.coords())
+                sx, sy = item.pos().x, item.pos().y
+                agent_poly = self.scene.addPolygon(QPolygonF([QPointF(p.x - sx, -p.y + sy) for p in item.repr()]), pen=self.pen, brush=self.brush2)
+                agent_poly.setPos(QPointF(sx, -sy))
                 agent_poly.setVisible(True)
                 agent_poly.setZValue(1)
                 self.registered_items[item] = agent_poly
@@ -64,7 +67,9 @@ class FieldDisplay(GridDisplay):
     @pyqtSlot(bc.Agent)
     def update_item_pos(self, agent: bc.Agent):
         npos = agent.coords()
-        self.registered_items[agent].setPos(*npos)
+        nrot = -degrees(agent.direction)
+        self.registered_items[agent].setPos(QPointF(npos[0], -npos[1]))
+        self.registered_items[agent].setRotation(nrot)
     
     def update_frame(self, deltatime: float):
         for item in self.core.agents():

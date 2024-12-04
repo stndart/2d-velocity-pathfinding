@@ -1,7 +1,7 @@
 from math import sin, cos, pi
 
-from .agents import Agent
-from .geometry import Figure, Triangle, Point
+from backend.agents import Agent
+from backend.geometry import Figure, Triangle, Point
 
 class SimpleCar(Agent):
     def __init__(self, x: float = 0.0, y: float = 0.0):
@@ -9,6 +9,12 @@ class SimpleCar(Agent):
         
         self.direction = 0
         self.speed = 0
+    
+    def dir_vec(self):
+        return Point(cos(self.direction), sin(self.direction))
+    
+    def speed_vec(self):
+        return self.dir_vec() * self.speed
     
     def turn(self, angle: float):
         self.direction += angle
@@ -26,11 +32,10 @@ class SimpleCar(Agent):
         width = 0.6
         pos = Point(self.x, self.y)
         
-        dir_vec = Point(cos(self.direction), sin(self.direction))
         w_vec = Point(cos(self.direction + pi / 2), sin(self.direction + pi / 2))
         
         return Triangle(
-            pos + dir_vec * width * 1.4,
-            pos + w_vec * width - dir_vec * width * 0.6,
-            pos - w_vec * width - dir_vec * width * 0.6,
+            pos + self.dir_vec() * width * 1.4,
+            pos + w_vec * width - self.dir_vec() * width * 0.6,
+            pos - w_vec * width - self.dir_vec() * width * 0.6,
         ).corners()
