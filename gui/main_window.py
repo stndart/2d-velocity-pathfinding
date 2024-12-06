@@ -1,4 +1,6 @@
 from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtCore import pyqtSignal, pyqtSlot
+from PyQt5.QtGui import QCloseEvent
 from backend import Core
 
 import weakref
@@ -9,15 +11,20 @@ import time
 
 from .menubar import MyMenuBar
 from .graphics import FieldDisplay
+from backend import logger
 
 import config
 
 class MainWindow(QMainWindow):
+    closed = pyqtSignal()
+    
     def __init__(self, core: Core):
         super().__init__()
         
         self.backend_core = core
         self.init_ui()
+        
+        self.target_fps = 60
         
         self.thread = Thread(name='MainWindow::main_thread', target=MainWindow.main_thread, args=(weakref.proxy(self),))
         self.loop_active = True
@@ -44,5 +51,18 @@ class MainWindow(QMainWindow):
             
             self.backend_core.update(deltatime)
             self.main_view.update_frame(deltatime)
+            
+            desired_timeout = 1 / self.target_fps
+            time.sleep(max(0, desired_timeout - deltatime))
     
-    #def closeEvent
+    def closeEvent(self, event: QCloseEvent):
+        logger.log("Close event caught")
+        print('close!')
+        
+        self.loop_active = False
+        self.thread.join()
+        
+        self.closed.emit()
+        logger.save()
+        
+        event.accept()

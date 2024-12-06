@@ -27,7 +27,7 @@ class CarDisplay(QWidget, Overseer):
         assets.load_asset('car')
 
         self.cars: list[SimpleCar] = []
-        self.car_images = []    
+        self.car_images = []
     
     def add_car(self, car: SimpleCar):
         self.cars.append(car)
