@@ -1,4 +1,7 @@
+from math import sin, cos, pi
+
 from .geometry import Point
+from .sprites import Sprite
 
 class Agent:
     pass
@@ -11,25 +14,41 @@ class Overseer:
         pass
 
 class Agent:
-    def __init__(self, x: float, y: float):
-        self.x = x
-        self.y = y
+    def __init__(self, c: Point, s: Sprite):
+        self.sprite = s
+        
+        self.center = c
         self.direction = 0
         
         self.overseer: Overseer = None
+    
+    def dir_vec(self):
+        return Point(cos(self.direction), sin(self.direction))
 
     def register_overseer(self, overseer: Overseer):
         self.overseer = overseer
+        
+    def move(self, mov: Point):
+        self.sprite.movement += mov
+    
+    def rotate(self, angle: float):
+        self.sprite.rotation += angle
+    
+    def update_sprite(self, deltatime: float):
+        rot, mov = self.sprite.update(deltatime)
+        self.center += mov
+        self.direction += rot
     
     def update(self, deltatime: float):
+        self.update_sprite(deltatime)
         if self.overseer:
             self.overseer.update_object(self)
     
     def pos(self) -> Point:
-        return Point(self.x, self.y)
+        return self.center
     
     def coords(self) -> tuple[float]:
-        return self.x, self.y
+        return self.center.coords()
     
     def repr(self) -> list[Point]:
-        return [Point(self.x, self.y)]
+        return [self.sprite.mass_center]

@@ -4,3 +4,6 @@
 
 # compiled .pyc
 *.pyc
+
+# logs
+logs/*

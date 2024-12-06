@@ -1,3 +1,4 @@
+import numpy as np
 from typing import Generator
 from itertools import pairwise
 
@@ -15,6 +16,12 @@ def sign(a: float):
         return -1
     return 0
 
+def rotation_matrix(angle: float) -> np.ndarray[float]:
+    return np.array([
+        [np.cos(angle), -np.sin(angle)],
+        [np.sin(angle), np.cos(angle)]
+    ])
+
 class Point:
     pass
 
@@ -30,6 +37,35 @@ class Figure:
     
     def contains(self, other: Point) -> bool:
         return False
+
+    def vertexes(self, quality: int = 0) -> list[Point]:
+        return []
+    
+    def set_vertexes(self, vs: list[Point]):
+        pass
+    
+    def __repr__(self):
+        arr = ''
+        for i in self.vertexes()[:-1]:
+            arr += f'{i}, '
+        arr += self.vertexes()[-1].__repr__()
+        
+        return f'{self.__class__}: [{arr}]'
+    
+    def move(self, shift: Point):
+        self.set_vertexes([v + shift for v in self.vertexes()])
+    
+    def rotate(self, center: Point, angle: float):
+        rotmat = rotation_matrix(angle)
+        vecs = np.array([[(v - center).x, (v - center).y] for v in self.vertexes()])
+        nvecs = vecs.dot(rotmat)
+        self.set_vertexes([Point(*c) for c in nvecs])
+
+from functools import reduce
+def sum_points(points: list[Point]):
+    return reduce(lambda x, y: x + y, points)
+def mean_points(points: list[Point]):
+    return sum_points(points) / len(points)
 
 # объявления классов для корректной типизации методов
 class Circle(Figure):
@@ -70,7 +106,7 @@ class Point:
         return Point(self.x - other.x, self.y - other.y)
     
     def __repr__(self):
-        return f'[{self.x:.3f}, {self.y:.3f}]'
+        return f'<{self.x:.3f}, {self.y:.3f}>'
 
     def angle_to(v1, v2):
         return atan2(v1.x * v2.y - v1.y * v2.x, v1.x * v2.x + v1.y * v2.y)
@@ -81,6 +117,25 @@ class Line:
             raise ValueError("Отрезок не может быть задан двумя одинаковыми точками.")
         self.p1 = p1
         self.p2 = p2
+    
+    def __repr__(self):
+        return f'{self.__class__}: A={self.p1}, B={self.p2}'
+    
+    def vertexes(self, quality: int = 0) -> list[Point]:
+        return [self.p1, self.p2]
+    
+    def set_vertexes(self, vs: list[Point]):
+        self.p1 = vs[0]
+        self.p2 = vs[1]
+    
+    def move(self, shift: Point):
+        self.set_vertexes([v + shift for v in self.vertexes()])
+    
+    def rotate(self, center: Point, angle: float):
+        rotmat = rotation_matrix(angle)
+        vecs = np.array([[(v - center).x, (v - center).y] for v in self.vertexes()])
+        nvecs = vecs.dot(rotmat)
+        self.set_vertexes([Point(*c) for c in nvecs])
 
     def distance(self, p: Point) -> float:
         '''
@@ -153,6 +208,26 @@ class Circle(Figure):
         self.center = Point(x, y)
         self.radius = max(radius, 0)  # Убедимся, что радиус не отрицательный
     
+    def __repr__(self):
+        return f'{self.__class__}: C={self.center}, R={self.radius:.3f}'
+    
+    def vertexes(self, quality: int = 0):
+        angles = np.linspace(0, np.pi * 2, quality)
+        px = self.center.x + np.cos(angles)
+        py = self.center.y + np.sin(angles)
+        return [Point(x, y) for x, y in zip(px, py)]
+
+    def set_vertexes(self, vs: list[Point]):
+        raise NotImplementedError("Circle can't be set with vertexes")
+    
+    def move(self, shift: Point):
+        self.center += shift
+    
+    def rotate(self, center: Point, angle: float):
+        rotmat = rotation_matrix(angle)
+        vec = np.array((self.center - center).coords())
+        self.center = Point(*(vec.dot(rotmat))) + center
+    
     def contains(self, other: Point) -> bool:
         return abs(self.center - other) < self.radius + EPS
 
@@ -173,6 +248,12 @@ class Circle(Figure):
 class Triangle(Figure):
     def __init__(self, v1: Point, v2: Point, v3: Point):
         self.vertices: list[Point] = [v1, v2, v3]
+    
+    def vertexes(self, quality: int = 0):
+        return self.vertices
+    
+    def set_vertexes(self, vs: list[Point]):
+        self.vertices = vs.copy()
 
     def area(self, a: Point, b: Point, c: Point) -> bool:
         return abs((a.x * (b.y - c.y) + 
@@ -237,12 +318,17 @@ class Triangle(Figure):
 
 class Rectangle(Figure):
     def __init__(self, bottom_left: Point, top_right: Point):
-        self.bottom_left = bottom_left
-        self.top_right = top_right
-
-        # Проверяем, что углы корректны
-        if bottom_left.x > top_right.x or bottom_left.y > top_right.y:
-            raise ValueError("Неверные координаты углов прямоугольника.")
+        self.bottom_left = Point(min(bottom_left.x, top_right.x), min(bottom_left.y, top_right.y))
+        self.top_right = Point(max(bottom_left.x, top_right.x), max(bottom_left.y, top_right.y))
+    
+    def vertexes(self, quality: int = 0):
+        return self.corners()
+    
+    def set_vertexes(self, vs: list[Point]):
+        raise NotImplementedError("Rectangle can't be set with vertexes")
+    
+    def rotate(self, center: Point, angle: float):
+        raise NotImplementedError("Rectangle can't be rotated")
     
     def corners(self) -> list[Point]:
         p1, p3 = self.bottom_left, self.top_right
@@ -299,6 +385,9 @@ class Rectangle(Figure):
 class Path(Figure):
     def __init__(self, path: list[Point] = []):
         self.path = path
+    
+    def vertexes(self, quality: int = 0):
+        return list(self.points())
 
     def points(self) -> Generator[Point, None, None]:
         for p in self.path:
@@ -348,4 +437,27 @@ class Path(Figure):
         if len(self.path) >= 2:
             self.remove_point(0)
         return self.current_point()
-        
+
+
+if __name__ == '__main__':
+    c = Circle(1, 0, 1)
+    l = Line(Point(0, 0), Point(1, 2))
+    s = Triangle(Point(0, 0), Point(3, 3), Point(2, 1))
+    
+    print(c)
+    c.rotate(c.center, np.deg2rad(45))
+    print(c)
+    c.rotate(Point(0, 0), np.deg2rad(45))
+    print(c)
+
+    print(l)
+    l.rotate(Point(0, 0), np.deg2rad(45))
+    print(l)
+    l.rotate(Point(1, 2), np.deg2rad(-45))
+    print(l)
+
+    print(s)
+    s.rotate(Point(0, 0), np.deg2rad(45))
+    print(s)
+    s.rotate(Point(1, 2), np.deg2rad(-45))
+    print(s)

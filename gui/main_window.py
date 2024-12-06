@@ -24,12 +24,18 @@ class MainWindow(QMainWindow):
         self.backend_core = core
         self.init_ui()
         
-        self.target_fps = 60
         
-        self.thread = Thread(name='MainWindow::main_thread', target=MainWindow.main_thread, args=(weakref.proxy(self),))
-        self.loop_active = True
-        self.thread.daemon = True
-        self.thread.start()
+        self.target_fps = 60
+        self.display_thread = Thread(name='MainWindow::display_thread', target=MainWindow.display_thread_fun, args=(weakref.proxy(self), self.target_fps))
+        self.display_thread_active = True
+        self.display_thread.daemon = True
+        self.display_thread.start()
+
+        self.target_phys_fps = 200
+        self.physics_thread = Thread(name='MainWindow::physics_thread', target=MainWindow.physics_thread_fun, args=(weakref.proxy(self), self.target_phys_fps))
+        self.physics_thread_active = True
+        self.physics_thread.daemon = True
+        self.physics_thread.start()
         
     def init_ui(self):
         self.setGeometry(*config.default_window_size)
@@ -43,24 +49,35 @@ class MainWindow(QMainWindow):
         
         self.show()
     
-    def main_thread(self):
+    def display_thread_fun(self, fps: float):
         self.timer = time.time()
-        while self.loop_active:
+        while self.display_thread_active:
+            deltatime = time.time() - self.timer
+            self.timer = time.time()
+            
+            self.main_view.update_frame(deltatime)
+            
+            desired_timeout = 1 / fps
+            time.sleep(max(0, desired_timeout - deltatime))
+    
+    def physics_thread_fun(self, fps: float):
+        self.timer = time.time()
+        while self.physics_thread_active:
             deltatime = time.time() - self.timer
             self.timer = time.time()
             
             self.backend_core.update(deltatime)
-            self.main_view.update_frame(deltatime)
             
-            desired_timeout = 1 / self.target_fps
+            desired_timeout = 1 / fps
             time.sleep(max(0, desired_timeout - deltatime))
     
     def closeEvent(self, event: QCloseEvent):
         logger.log("Close event caught")
-        print('close!')
         
-        self.loop_active = False
-        self.thread.join()
+        self.physics_thread_active = False
+        self.display_thread_active = False
+        self.display_thread.join()
+        self.physics_thread.join()
         
         self.closed.emit()
         logger.save()

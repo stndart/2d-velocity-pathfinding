@@ -41,16 +41,17 @@ class FieldDisplay(GridDisplay):
     
     @pyqtSlot()
     def update_items(self):
-        for item in self.core.figures():
+        for item in self.core.sprites():
             if item not in self.registered_items:
-                if isinstance(item, bc.Circle):
-                    a, b = item.center.x - item.radius, -item.center.y + item.radius
-                    c, d = 2 * item.radius, -2 * item.radius
+                mesh = item.mesh
+                if isinstance(mesh, bc.Circle):
+                    a, b = mesh.center.x - mesh.radius, -mesh.center.y + mesh.radius
+                    c, d = 2 * mesh.radius, -2 * mesh.radius
                     self.registered_items[item] = self.scene.addEllipse(a, b, c, d, pen=self.pen, brush=self.brush)
-                elif isinstance(item, (bc.Triangle, bc.Rectangle)):
-                    self.registered_items[item] = self.scene.addPolygon(QPolygonF([QPointF(v.x, -v.y) for v in item.corners()]), pen=self.pen, brush=self.brush)
-                elif isinstance(item, bc.Path):
-                    titem = RouteChain(parent=self, path=item, pen=self.pen2, brush=self.brush3)
+                elif isinstance(mesh, (bc.Triangle, bc.Rectangle)):
+                    self.registered_items[item] = self.scene.addPolygon(QPolygonF([QPointF(v.x, -v.y) for v in mesh.corners()]), pen=self.pen, brush=self.brush)
+                elif isinstance(mesh, bc.Path):
+                    titem = RouteChain(parent=self, path=mesh, pen=self.pen2, brush=self.brush3)
                     self.scene.addItem(titem)
                     titem.setZValue(10)
                     self.registered_items[item] = titem
