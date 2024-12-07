@@ -24,11 +24,11 @@ def main(core: Core):
 if __name__ == '__main__':
     back = Core()
 
-    route = Path(
-        [Point(-1, 1),
-         Point(2, 0),
-         Point(3, 4)]
-    )    
+    route = Path([
+        Point(-1, 1),
+        Point(2, 0),
+        Point(3, 6)
+    ])    
     circ = make_sprite(Circle(4, 6, 2))
     tria = make_sprite(Triangle(
         Point(1, 5),
@@ -40,10 +40,9 @@ if __name__ == '__main__':
     back.add_sprite(tria)
     back.add_sprite(Sprite(route, None))
     
-    #car = RoutingCar(route)
-    car = SimpleCar(Point(-1, 3))
-    car.direction = radians(10)
-    car.speed = 1
+    car = RoutingCar(route, turnspeed=0.8, maxspeed=2)
+    #car = SimpleCar(Point(-1, 3))
+    car.rotate(radians(90))
     
     back.add_agent(car)
     

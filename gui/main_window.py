@@ -50,10 +50,10 @@ class MainWindow(QMainWindow):
         self.show()
     
     def display_thread_fun(self, fps: float):
-        self.timer = time.time()
+        timer = time.time()
         while self.display_thread_active:
-            deltatime = time.time() - self.timer
-            self.timer = time.time()
+            deltatime = time.time() - timer
+            timer = time.time()
             
             self.main_view.update_frame(deltatime)
             
@@ -61,15 +61,16 @@ class MainWindow(QMainWindow):
             time.sleep(max(0, desired_timeout - deltatime))
     
     def physics_thread_fun(self, fps: float):
-        self.timer = time.time()
+        timer = time.time()
         while self.physics_thread_active:
-            deltatime = time.time() - self.timer
-            self.timer = time.time()
+            deltatime = time.time() - timer
+            timer = time.time()
             
             self.backend_core.update(deltatime)
             
             desired_timeout = 1 / fps
-            time.sleep(max(0, desired_timeout - deltatime))
+            time.sleep(max(0, desired_timeout - deltatime))            
+            
     
     def closeEvent(self, event: QCloseEvent):
         logger.log("Close event caught")

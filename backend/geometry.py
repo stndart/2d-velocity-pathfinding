@@ -18,8 +18,8 @@ def sign(a: float):
 
 def rotation_matrix(angle: float) -> np.ndarray[float]:
     return np.array([
-        [np.cos(angle), -np.sin(angle)],
-        [np.sin(angle), np.cos(angle)]
+        [np.cos(angle), np.sin(angle)],
+        [-np.sin(angle), np.cos(angle)]
     ])
 
 class Point:

@@ -46,6 +46,7 @@ class Sprite:
             if self.mesh is not None:
                 self.mesh.rotate(self.mass_center, rot)
                 self.mesh.move(mov)
+            self.mass_center += mov
             
             self.rotation = 0.0
             self.movement = Point(0, 0)

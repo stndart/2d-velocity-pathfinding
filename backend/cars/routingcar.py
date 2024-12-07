@@ -5,7 +5,7 @@ from backend.geometry import Path, Point, sign
 
 class RoutingCar(SimpleCar):
     def __init__(self, path: Path, turnspeed: float = 0.3, maxspeed: float = 1):
-        super().__init__(*path.start_point().coords())
+        super().__init__(path.start_point())
 
         self.path = path        
         self.next_point = path.current_point()
@@ -27,6 +27,7 @@ class RoutingCar(SimpleCar):
         
         direction_vec = self.next_point - self.pos()
         direction_vec /= abs(direction_vec)
+        angle_to_turn_abs = 0
         if self.dir_vec().has_intersect(direction_vec):
             distance_to_travel = abs(self.pos() - self.next_point)
             self.speed = self.maxspeed if distance_to_travel > self.speed * deltatime else distance_to_travel / deltatime
@@ -34,6 +35,7 @@ class RoutingCar(SimpleCar):
             self.speed = 0
             angle_to_turn = self.dir_vec().angle_to(direction_vec)
             angle_to_turn_abs = min(self.turnspeed * deltatime, abs(angle_to_turn))
-            self.turn(angle_to_turn_abs * sign(angle_to_turn))
+            self.rotate(angle_to_turn_abs * sign(angle_to_turn))
         
+        #print(f'{1 / deltatime if deltatime > 0 else 999:1f}, {deltatime:.4f}, {self.speed:.3f}, {angle_to_turn_abs:.3f}')
         super().update(deltatime)
