@@ -43,9 +43,9 @@ class GraphEdge:
         return self.v2 if self.v1 is other else self.v1
 
 class Graph:
-    '''
+    """
     Undirected graph
-    '''
+    """
     def __init__(self, vertexes: set[GraphVertex] = set()):
         self.vertexes = vertexes
     
@@ -69,9 +69,9 @@ class Graph:
         self.add_edge(e.v1, e.v2, cost=cost)
 
 class DirectedGraph(Graph):
-    '''
+    """
     Directed graph
-    '''
+    """
     
     @dispatch(GraphVertex, GraphVertex, cost=float)
     def add_edge(self, v1: GraphVertex, v2: GraphVertex, cost: float = 1.0):

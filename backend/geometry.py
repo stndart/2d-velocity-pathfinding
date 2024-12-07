@@ -172,11 +172,11 @@ class Line:
         self.set_vertexes([Point(*c) for c in nvecs])
 
     def distance(self, p: Point) -> float:
-        '''
+        """
         Возвращает знаковое расстояние от точки до прямой.
         Если расстояние меньше нуля, то точка справа от прямой, если больше, то слева.
         (сторона выбирается при обходе прямой от p1 к p2)
-        '''
+        """
         # Векторное представление
         line_vec = self.p2 - self.p1  # Вектор направления прямой
         point_vec = p - self.p1       # Вектор от точки `p1` до `p`
@@ -287,17 +287,33 @@ class Circle(Figure):
             return True
         return False
     
-    def contains(self, other: Point) -> bool:
-        return abs(self.center - other) < self.radius + EPS
+    def contains(self, other: Point|Figure|Line):
+        """
+        Checks if other figure is completely inside
+        """
+        if isinstance(other, Point):
+            return self.has_intersect(other)
+        elif isinstance(other, Circle):
+            return abs(self.center - other.center) < self.radius - other.radius + EPS
+        elif isinstance(other, (Figure, Line)):
+            if any([not self.has_intersect(p) for p in other.vertexes()]):
+                return False
+            return True
+        
+        return False
 
-    def has_intersect(self, other: Figure | Line) -> bool:
+    def has_intersect(self, other: Point|Line|Figure) -> bool:
+        """
+        Checks if intersection of two figures is not empty
+        """
         if self.radius < EPS:  # Если радиус 0, окружность превращается в точку
-            return other.contains(self.center)
+            return self.center.has_intersect(other)
+        elif isinstance(other, Point):
+            return abs(self.center - other) < self.radius + EPS
         elif isinstance(other, Line):
             return self._intersects_line(other)
         elif isinstance(other, Circle):
-            dist = abs(self.center - other.center)
-            return is_close(dist, self.radius + other.radius)
+            return abs(self.center - other.center) < self.radius + other.radius + EPS
         elif isinstance(other, Rectangle):
             return other.has_intersect(self)
         elif isinstance(other, Triangle):
@@ -308,16 +324,16 @@ class Triangle(Figure):
     def __init__(self, v1: Point, v2: Point, v3: Point):
         self.vertices: list[Point] = [v1, v2, v3]
         
-    def copy(self):
+    def copy(self) -> Triangle:
         return Triangle(*[v.copy() for v in self.vertices])
     
-    def vertexes(self, quality: int = 0):
+    def vertexes(self, quality: int = 0) -> list[Point]:
         return self.vertices
     
     def set_vertexes(self, vs: list[Point]):
         self.vertices = vs.copy()
 
-    def area(self, a: Point, b: Point, c: Point) -> bool:
+    def area(self, a: Point, b: Point, c: Point) -> float:
         return abs((a.x * (b.y - c.y) + 
                     b.x * (c.y - a.y) + 
                     c.x * (a.y - b.y)) / 2.0)
@@ -332,13 +348,46 @@ class Triangle(Figure):
         a, b, c = self.vertices
         return [Line(a, b), Line(b, c), Line(c, a)]
 
-    def contains(self, p: Point) -> bool:
-        a, b, c = self.vertices
-        area_orig = self.area(a, b, c)
-        area1 = self.area(p, b, c)
-        area2 = self.area(a, p, c)
-        area3 = self.area(a, b, p)
-        return is_close(area_orig, area1 + area2 + area3)
+    def contains(self, other: Point|Figure|Line) -> bool:
+        """
+        Checks if other figure is completely inside
+        """
+        if isinstance(other, Point):
+            return self.has_intersect(other)
+        elif isinstance(other, Circle):
+            if self.has_intersect(other.center):  # Center of the circle is inside, so we should check intersections with edges
+                if any([other.center.distance_to(e) - other.radius < -EPS for e in self.edges()]):
+                    return False
+                return True
+            else:
+                return False
+        elif isinstance(other, (Figure, Line)):
+            if any([not self.has_intersect(p) for p in other.vertexes()]):
+                return False
+            return True
+        
+        return False
+    
+    def has_intersect(self, other: Point|Line|Figure) -> bool:
+        """
+        Checks if intersection of two figures is not empty
+        """
+        if isinstance(other, Point):
+            a, b, c = self.vertices
+            area_orig = self.area(a, b, c)
+            area1 = self.area(p, b, c)
+            area2 = self.area(a, p, c)
+            area3 = self.area(a, b, p)
+            return is_close(area_orig, area1 + area2 + area3)
+        elif isinstance(other, Line):
+            return any([other.has_intersect(e) for e in self.edges()])
+        elif isinstance(other, Circle):
+            return self._intersects_circle(other)
+        elif isinstance(other, Triangle):
+            return self._intersects_triangle(other)
+        elif isinstance(other, Rectangle):
+            return other.has_intersect(self)
+        return False
 
     def _intersects_circle(self, circle: Circle) -> bool:
         a, b, c = self.vertices
@@ -367,26 +416,15 @@ class Triangle(Figure):
             return True
         return False
 
-    def has_intersect(self, other: Figure | Line) -> bool:
-        if isinstance(other, Line):
-            return any([other.has_intersect(e) for e in self.edges()])
-        elif isinstance(other, Circle):
-            return self._intersects_circle(other)
-        elif isinstance(other, Triangle):
-            return self._intersects_triangle(other)
-        elif isinstance(other, Rectangle):
-            return other.has_intersect(self)
-        return False
-
 class Rectangle(Figure):
     def __init__(self, bottom_left: Point, top_right: Point):
         self.bottom_left = Point(min(bottom_left.x, top_right.x), min(bottom_left.y, top_right.y))
         self.top_right = Point(max(bottom_left.x, top_right.x), max(bottom_left.y, top_right.y))
         
-    def copy(self):
+    def copy(self) -> Rectangle:
         return Rectangle(self.bottom_left.copy(), self.top_right.copy())
     
-    def vertexes(self, quality: int = 0):
+    def vertexes(self, quality: int = 0) -> list[Point]:
         return self.corners()
     
     def set_vertexes(self, vs: list[Point]):
@@ -404,23 +442,40 @@ class Rectangle(Figure):
     def edges(self) -> list[Line]:
         p1, p2, p3, p4 = self.corners()
         return [Line(p1, p2), Line(p2, p3), Line(p3, p4), Line(p4, p1)]
+    
+    def contains(self, other: Point|Figure|Line) -> bool:
+        """
+        Checks if other figure is completely inside
+        """
+        if isinstance(other, Point):
+            return self.has_intersect(other)
+        elif isinstance(other, Circle):
+            if self.has_intersect(other.center):  # Center of the circle is inside, so we should check intersections with edges
+                if any([other.center.distance_to(e) - other.radius < -EPS for e in self.edges()]):
+                    return False
+                return True
+            else:
+                return False
+        elif isinstance(other, (Figure, Line)):
+            if any([not self.has_intersect(p) for p in other.vertexes()]):
+                return False
+            return True
+        
+        return False
+    
 
-    def contains(self, p: Point) -> bool:
+    def has_intersect(self, other: Point|Line|Figure) -> bool:
         """
-        Проверяет, находится ли точка внутри прямоугольника (включая границы).
+        Checks if intersection of two figures is not empty
         """
-        return (self.bottom_left.x - EPS <= p.x <= self.top_right.x + EPS and
-                self.bottom_left.y - EPS <= p.y <= self.top_right.y + EPS)
-
-    def has_intersect(self, other: Figure | Line) -> bool:
-        """
-        Проверяет пересечение прямоугольника с другими фигурами.
-        """
-        if isinstance(other, Line):
+        if isinstance(other, Point):
+            return (self.bottom_left.x - EPS <= other.x <= self.top_right.x + EPS and
+                    self.bottom_left.y - EPS <= other.y <= self.top_right.y + EPS)
+        elif isinstance(other, Line):
             return any([other.has_intersect(e) for e in self.edges()])
         elif isinstance(other, Circle):
             return self._intersects_circle(other)
-        if isinstance(other, (Triangle, Rectangle)):
+        elif isinstance(other, (Triangle, Rectangle)):
             return self._intersects_rectangle(other)
 
         return False
