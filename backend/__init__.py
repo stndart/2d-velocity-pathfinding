@@ -6,3 +6,4 @@ from .geometry import mean_points, sum_points
 from .cars import SimpleCar, RoutingCar
 from .agents import Agent, Overseer
 from .sprites import Sprite, make_sprite
+from .sprites import SpriteGenerator
