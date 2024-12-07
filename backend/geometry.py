@@ -32,6 +32,9 @@ class Figure:
     def __init__(self):
         pass
     
+    def copy(self):
+        return Figure()
+    
     def has_intersect(self, other: 'Figure') -> bool:
         return False
     
@@ -59,7 +62,7 @@ class Figure:
         rotmat = rotation_matrix(angle)
         vecs = np.array([[(v - center).x, (v - center).y] for v in self.vertexes()])
         nvecs = vecs.dot(rotmat)
-        self.set_vertexes([Point(*c) for c in nvecs])
+        self.set_vertexes([Point(*c) + center for c in nvecs])
 
 from functools import reduce
 def sum_points(points: list[Point]):
@@ -79,6 +82,9 @@ class Point:
     def __init__(self, x: float, y: float):
         self.x = x
         self.y = y
+        
+    def copy(self):
+        return Point(self.x, self.y)
 
     def has_intersect(self, other: Point|Figure) -> bool:
         if isinstance(other, Point):
@@ -117,6 +123,9 @@ class Line:
             raise ValueError("Отрезок не может быть задан двумя одинаковыми точками.")
         self.p1 = p1
         self.p2 = p2
+        
+    def copy(self):
+        return Line(self.p1.copy(), self.p2.copy())
     
     def __repr__(self):
         return f'{self.__class__}: A={self.p1}, B={self.p2}'
@@ -207,6 +216,9 @@ class Circle(Figure):
     def __init__(self, x: float, y: float, radius: float):
         self.center = Point(x, y)
         self.radius = max(radius, 0)  # Убедимся, что радиус не отрицательный
+        
+    def copy(self):
+        return Circle(self.center.x, self.center.y, self.radius)
     
     def __repr__(self):
         return f'{self.__class__}: C={self.center}, R={self.radius:.3f}'
@@ -228,6 +240,28 @@ class Circle(Figure):
         vec = np.array((self.center - center).coords())
         self.center = Point(*(vec.dot(rotmat))) + center
     
+    def _intersects_line(self, line: Line) -> bool:
+        x0 = line.p1.x
+        y0 = line.p1.y
+        x1 = (line.p2 - line.p1).x
+        y1 = (line.p2 - line.p1).y
+        
+        A = x1 ** 2 + y1 ** 2
+        B = 2 * x1 * (x0 - self.center.x) +  2 * y1 * (y0 - self.center.y)
+        C = (x0 - self.center.x) ** 2 + (y0 - self.center.y) ** 2
+        
+        D = B ** 2 - 4 * A * C
+        if D < 0:
+            return False
+        t1 = (-B - sqrt(D)) / (4 * A * C)
+        t2 = (-B + sqrt(D)) / (4 * A * C)
+        
+        if 0 <= t1 <= 1:
+            return True
+        if 0 <= t2 <= 1:
+            return True
+        return False
+    
     def contains(self, other: Point) -> bool:
         return abs(self.center - other) < self.radius + EPS
 
@@ -235,7 +269,7 @@ class Circle(Figure):
         if self.radius < EPS:  # Если радиус 0, окружность превращается в точку
             return other.contains(self.center)
         elif isinstance(other, Line):
-            return abs(other.distance(self.center)) < EPS
+            return self._intersects_line(other)
         elif isinstance(other, Circle):
             dist = abs(self.center - other.center)
             return is_close(dist, self.radius + other.radius)
@@ -248,6 +282,9 @@ class Circle(Figure):
 class Triangle(Figure):
     def __init__(self, v1: Point, v2: Point, v3: Point):
         self.vertices: list[Point] = [v1, v2, v3]
+        
+    def copy(self):
+        return Triangle(*[v.copy() for v in self.vertices])
     
     def vertexes(self, quality: int = 0):
         return self.vertices
@@ -288,8 +325,8 @@ class Triangle(Figure):
             return True
         elif circle.contains(a) or circle.contains(b) or circle.contains(c): # Если хотя бы одна из вершин треугольника внутри окружности
             return True
-        elif min(abs(d1), abs(d2), abs(d3)) < circle.radius + EPS: # Если окружность пересекает хотя бы одну сторону треугольника
-            return True
+        elif any([circle.has_intersect(edge) for edge in self.edges()]):
+            return True # Если окружность пересекает хотя бы одну сторону треугольника
         return False
     
     def _intersects_triangle(self, other: Triangle) -> bool:
@@ -320,6 +357,9 @@ class Rectangle(Figure):
     def __init__(self, bottom_left: Point, top_right: Point):
         self.bottom_left = Point(min(bottom_left.x, top_right.x), min(bottom_left.y, top_right.y))
         self.top_right = Point(max(bottom_left.x, top_right.x), max(bottom_left.y, top_right.y))
+        
+    def copy(self):
+        return Rectangle(self.bottom_left.copy(), self.top_right.copy())
     
     def vertexes(self, quality: int = 0):
         return self.corners()
@@ -444,20 +484,25 @@ if __name__ == '__main__':
     l = Line(Point(0, 0), Point(1, 2))
     s = Triangle(Point(0, 0), Point(3, 3), Point(2, 1))
     
-    print(c)
-    c.rotate(c.center, np.deg2rad(45))
-    print(c)
-    c.rotate(Point(0, 0), np.deg2rad(45))
-    print(c)
+    #print(c)
+    #c.rotate(c.center, np.deg2rad(45))
+    #print(c)
+    #c.rotate(Point(0, 0), np.deg2rad(45))
+    #print(c)
 
-    print(l)
-    l.rotate(Point(0, 0), np.deg2rad(45))
-    print(l)
-    l.rotate(Point(1, 2), np.deg2rad(-45))
-    print(l)
+    #print(l)
+    #l.rotate(Point(0, 0), np.deg2rad(45))
+    #print(l)
+    #l.rotate(Point(1, 2), np.deg2rad(-45))
+    #print(l)
 
-    print(s)
-    s.rotate(Point(0, 0), np.deg2rad(45))
-    print(s)
-    s.rotate(Point(1, 2), np.deg2rad(-45))
-    print(s)
+    #print(s)
+    #s.rotate(Point(0, 0), np.deg2rad(45))
+    #print(s)
+    #s.rotate(Point(1, 2), np.deg2rad(-45))
+    #print(s)
+    
+    c1 = Circle(4, 6, 2)
+    t1 = Triangle(Point(-0.160, 3.000), Point(-1.360, 3.600), Point(-1.360, 2.400))
+    print(c1.has_intersect(t1))
+    print(t1.has_intersect(c1))
