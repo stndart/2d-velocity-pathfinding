@@ -1,15 +1,20 @@
 from .agents import Agent, Overseer
 from .sprites import Sprite
+from .pathfinding import QuadTree
+from .geometry import Rectangle, Point
 
 class Core(Overseer):
     def __init__(self, width: float = 100.0, height: float = 100.0):
         self.field_size = (width, height)
         self._sprites: list[Sprite] = []
         self._agents: list[Agent] = []
+        
+        self.quadtree = QuadTree(Rectangle(Point(-width/2, -height/2), Point(width/2, height/2)))
         self.pathfinder = None
     
     def add_sprite(self, f: Sprite):
         self._sprites.append(f)
+        self.quadtree.add_sprites([f])
     
     def sprites(self) -> list[Sprite]:
         for f in self._sprites:
@@ -17,6 +22,7 @@ class Core(Overseer):
     
     def add_agent(self, a: Agent):
         self._agents.append(a)
+        self.quadtree.add_sprites([a.sprite])
     
     def agents(self) -> list[Agent]:
         for a in self._agents:
@@ -36,3 +42,5 @@ class Core(Overseer):
             
         for s in all_sprites:
             s.update(deltatime)
+            
+        self.quadtree.optimize_tree()

@@ -57,4 +57,6 @@ if __name__ == '__main__':
     
     back.add_agent(car)
     
+    print(back.quadtree.print_tree())
+    
     main(back)

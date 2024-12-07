@@ -52,6 +52,9 @@ class Sprite:
             self.movement = Point(0, 0)
         
         return rot, mov
+    
+    def __hash__(self):
+        return id(self)
 
 def make_sprite(f: Figure):
     return Sprite(f.copy(), f.copy())

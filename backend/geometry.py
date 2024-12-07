@@ -119,8 +119,8 @@ class Point:
     def __abs__(self) -> float:
         return sqrt(self.x ** 2 + self.y ** 2)
     
-    def __mul__(self, other: float|Point) -> Point | float:
-        if isinstance(other, float):
+    def __mul__(self, other: int|float|Point) -> Point | float:
+        if isinstance(other, (float, int)):
             return Point(self.x * other, self.y * other)
         elif isinstance(other, Point):
             return self.x * other.x + self.y * other.y
@@ -375,9 +375,9 @@ class Triangle(Figure):
         if isinstance(other, Point):
             a, b, c = self.vertices
             area_orig = self.area(a, b, c)
-            area1 = self.area(p, b, c)
-            area2 = self.area(a, p, c)
-            area3 = self.area(a, b, p)
+            area1 = self.area(other, b, c)
+            area2 = self.area(a, other, c)
+            area3 = self.area(a, b, other)
             return is_close(area_orig, area1 + area2 + area3)
         elif isinstance(other, Line):
             return any([other.has_intersect(e) for e in self.edges()])
@@ -423,6 +423,9 @@ class Rectangle(Figure):
         
     def copy(self) -> Rectangle:
         return Rectangle(self.bottom_left.copy(), self.top_right.copy())
+    
+    def size(self) -> Point:
+        return self.top_right - self.bottom_left
     
     def vertexes(self, quality: int = 0) -> list[Point]:
         return self.corners()
