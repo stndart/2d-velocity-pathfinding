@@ -53,7 +53,7 @@ class Figure:
             arr += f'{i}, '
         arr += self.vertexes()[-1].__repr__()
         
-        return f'{self.__class__}: [{arr}]'
+        return f'{self.__class__.__name__}: [{arr}]'
     
     def move(self, shift: Point):
         self.set_vertexes([v + shift for v in self.vertexes()])
@@ -93,14 +93,39 @@ class Point:
             return other.contains(self)
         return False
     
+    def distance_to(self, other: Point|Figure|Line) -> float:
+        if isinstance(other, Point):
+            return np.sqrt((self.x - other.x)**2 + (self.y - other.y)**2)
+        elif isinstance(other, Circle):
+            return max(0, self.distance_to(other.center) - other.radius)
+        elif isinstance(other, (Rectangle, Triangle)):
+            if other.has_intersect(self):
+                return 0
+            return min([self.distance_to(e) for e in other.edges()])
+        elif isinstance(other, Line):
+            v1 = other.p2 - other.p1
+            v2 = self - other.p1
+            t = (v1 * v2) / abs(v1) ** 2
+            if t < 0:
+                return self.distance_to(other.p1)
+            elif t > 1:
+                return self.distance_to(other.p2)
+            else:
+                return abs(other.distance(self))
+    
     def coords(self) -> tuple[float]:
         return self.x, self.y
 
     def __abs__(self) -> float:
         return sqrt(self.x ** 2 + self.y ** 2)
     
-    def __mul__(self, other: float) -> Point:
-        return Point(self.x * other, self.y * other)
+    def __mul__(self, other: float|Point) -> Point | float:
+        if isinstance(other, float):
+            return Point(self.x * other, self.y * other)
+        elif isinstance(other, Point):
+            return self.x * other.x + self.y * other.y
+        else:
+            raise NotImplementedError(f"__mul__ for args Point and {other.__class__} is not implemented")
     
     def __truediv__(self, other: float) -> Point:
         return Point(self.x / other, self.y / other)
@@ -221,7 +246,7 @@ class Circle(Figure):
         return Circle(self.center.x, self.center.y, self.radius)
     
     def __repr__(self):
-        return f'{self.__class__}: C={self.center}, R={self.radius:.3f}'
+        return f'{self.__class__.__name__}: C={self.center}, R={self.radius:.3f}'
     
     def vertexes(self, quality: int = 0):
         angles = np.linspace(0, np.pi * 2, quality)
@@ -478,6 +503,19 @@ class Path(Figure):
             self.remove_point(0)
         return self.current_point()
 
+def fig_distance(f1: Figure, f2: Figure):
+    if isinstance(f1, Circle):
+        if isinstance(f2, Circle):
+            return max(0, abs(f1.center - f2.center) - f1.radius - f2.radius)
+        else:
+            return max(0, f1.center.distance_to(f2) - f1.radius)
+    else:
+        if isinstance(f2, Circle):
+            return fig_distance(f2, f1)
+        else:
+            if f1.has_intersect(f2):
+                return 0
+            return min([v.distance_to(f2) for v in f1.vertexes()])
 
 if __name__ == '__main__':
     c = Circle(1, 0, 1)
