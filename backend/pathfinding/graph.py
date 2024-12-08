@@ -4,6 +4,18 @@ class GraphVertex:
     def __init__(self):
         self.edges: dict['GraphEdge', float] = dict()
     
+    def __copy__(self):
+        raise TypeError(f"Copying of {self.__class__.__name__} is not allowed")
+
+    def __deepcopy__(self, memo):
+        raise TypeError(f"Deep copying of {self.__class__.__name__} is not allowed")
+    
+    def __hash__(self):
+        return id(self)
+    
+    def __eq__(self, other: 'GraphVertex') -> bool:
+        return id(self) == id(other)
+    
     def add_edge_to(self, other: 'GraphVertex', cost: float = 1):
         """
         Adds an edge to this vertex's edge list.
@@ -21,22 +33,25 @@ class GraphVertex:
     
     def remove_edge_to(self, other: 'GraphVertex'):
         self.edges.pop(GraphEdge(self, other))
-    
-    def __hash__(self):
-        return id(self)
-    
-    def __eq__(self, other: 'GraphVertex'):
-        return id(self) == id(other)
 
 class GraphEdge:
     def __init__(self, v1: GraphVertex, v2: GraphVertex):
         self.v1 = v1
         self.v2 = v2
     
+    def __copy__(self):
+        raise TypeError(f"Copying of {self.__class__.__name__} is not allowed")
+
+    def __deepcopy__(self, memo):
+        raise TypeError(f"Deep copying of {self.__class__.__name__} is not allowed")
+    
     def __hash__(self):
         return id(self.v1) + id(self.v2)
     
-    def __eq__(self, other: 'GraphEdge'):
+    def __eq__(self, other: 'GraphEdge') -> bool:
+        if not isinstance(other, GraphEdge):
+            return False
+        
         return self.v1 is other.v1 and self.v2 is other.v2
     
     def other(self, other: GraphVertex):

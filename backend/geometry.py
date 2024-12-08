@@ -84,6 +84,21 @@ class Point:
         
     def copy(self):
         return Point(self.x, self.y)
+    
+    def vertexes(self, quality: int = 0) -> list[Point]:
+        return [self]
+    
+    def move(self, shift: Point):
+        self.x += shift.x
+        self.y += shift.y
+    
+    def rotate(self, center: Point, angle: float):
+        rotmat = rotation_matrix(angle)
+        vecs = np.array([[(self - center).x, (self - center).y]])
+        nvecs = vecs.dot(rotmat)
+        c = Point(*nvecs[0]) + center
+        self.x = c.x
+        self.y = c.y
 
     def has_intersect(self, other: Point|Figure) -> bool:
         if isinstance(other, Point):
@@ -137,6 +152,14 @@ class Point:
     
     def __repr__(self):
         return f'<{self.x:.3f}, {self.y:.3f}>'
+    
+    def __hash__(self):
+        return self.x.__hash__() + self.y.__hash__()
+    
+    def __eq__(self, other: Point) -> bool:
+        if not isinstance(other, Point):
+            return False
+        return is_close(abs(self - other), 0)
 
     def angle_to(v1, v2):
         return atan2(v1.x * v2.y - v1.y * v2.x, v1.x * v2.x + v1.y * v2.y)
@@ -167,6 +190,19 @@ class Line:
         self.p1 = vs[0]
         self.p2 = vs[1]
     
+    def __hash__(self):
+        return self.p1.__hash__() + self.p2.__hash__()
+    
+    def __eq__(self, other: 'Line') -> bool:
+        if not isinstance(other, Line):
+            return False
+        
+        if self.p1 == other.p1:
+            return self.p2 == other.p2
+        elif self.p1 == other.p2:
+            return self.p2 == other.p1
+        return False
+    
     def move(self, shift: Point):
         self.set_vertexes([v + shift for v in self.vertexes()])
     
@@ -193,7 +229,16 @@ class Line:
         # Расстояние = площадь / длина прямой
         return cross_product / line_length if line_length > EPS else 0.0
 
-    def has_intersect(self, other: Line) -> bool:
+    def has_intersect(self, other: Point|Line|Figure) -> bool:
+        if isinstance(other, Point):
+            return other.distance_to(self) < EPS
+        elif isinstance(other, Line):
+            return self._intersects_line(other)
+        elif isinstance(other, Figure):
+            return other.has_intersect(self)
+        return False
+
+    def _intersects_line(self, other: Line) -> bool:
         """
         Проверяет, пересекаются ли два отрезка.
         """
@@ -482,7 +527,7 @@ class Rectangle(Figure):
             return (self.bottom_left.x - EPS <= other.x <= self.top_right.x + EPS and
                     self.bottom_left.y - EPS <= other.y <= self.top_right.y + EPS)
         elif isinstance(other, Line):
-            return any([other.has_intersect(e) for e in self.edges()])
+            return any([other.has_intersect(e) for e in self.edges()]) or any([self.contains(v) for v in other.vertexes()])
         elif isinstance(other, Circle):
             return self._intersects_circle(other)
         elif isinstance(other, (Triangle, Rectangle)):

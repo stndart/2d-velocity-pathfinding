@@ -13,10 +13,9 @@ from PyQt5.QtCore import QMetaObject
 from PyQt5.Qt import Q_ARG
 
 import backend as bc
-from .assets import assets
 from .grid_display import GridDisplay
 from .chain_graphics_item import RouteChain
-import config
+from .fig_array_display import FigArrayItem
 
 class FieldDisplay(GridDisplay):
     def __init__(self, parent: QWidget, core: bc.Core):
@@ -55,6 +54,13 @@ class FieldDisplay(GridDisplay):
                     self.scene.addItem(titem)
                     titem.setZValue(10)
                     self.registered_items[item] = titem
+                elif isinstance(mesh, bc.FigArray):
+                    titem = FigArrayItem(parent=self, fig_array=mesh, pen=self.pen2, brush=self.brush)
+                    self.scene.addItem(titem)
+                    titem.setZValue(9)
+                    self.registered_items[item] = titem
+                else:
+                    raise NotImplementedError(f"Can't draw {mesh.__class__.__name__}: unknown class")
         
         for item in self.core.agents():
             if item not in self.registered_items:

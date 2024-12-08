@@ -52,6 +52,11 @@ class QuadTree:
                 continue
             yield ch
     
+    def dfs(self) -> Iterable['QuadTree']:
+        yield self
+        for ch in self.iter_children():
+            yield from ch.dfs()
+    
     def init_children(self):
         for ix, iy, rect in split_rectangle(self.rectangle):
             i = ix + iy * SPLIT_CONST
@@ -134,7 +139,7 @@ class QuadTree:
             yield from ch.get_sprites_lazy()
     
     def get_quad_tree(self, s: Sprite) -> Optional['QuadTree']:
-        if not self.rectangle.contains(s):
+        if not self.contains(s):
             return None
         
         for ch in self.iter_children():
