@@ -69,7 +69,7 @@ class MainWindow(QMainWindow):
             self.backend_core.update(deltatime)
             
             desired_timeout = 1 / fps
-            time.sleep(max(0, desired_timeout - deltatime))            
+            time.sleep(max(0, desired_timeout - deltatime))
             
     
     def closeEvent(self, event: QCloseEvent):

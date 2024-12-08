@@ -1,21 +1,19 @@
-from math import sin, cos, pi
+from math import sin, cos
 
 from .geometry import Point
 from .sprites import Sprite
-
-class Agent:
-    pass
 
 class Overseer:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
     
-    def update_object(self, obj: Agent):
+    def update_object(self, obj: 'Agent'):
         pass
 
 class Agent:
     def __init__(self, c: Point, s: Sprite):
         self.sprite = s
+        self.sprite.static = False
         
         self.center = c
         self.direction = 0
