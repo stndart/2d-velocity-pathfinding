@@ -25,9 +25,6 @@ def rotation_matrix(angle: float) -> np.ndarray[float]:
 class Point:
     pass
 
-class Line:
-    pass
-
 class Figure:
     def __init__(self):
         pass
@@ -76,6 +73,8 @@ class Circle(Figure):
 class Triangle(Figure):
     pass
 class Rectangle(Figure):
+    pass
+class Line:
     pass
 
 class Point:
@@ -153,7 +152,13 @@ class Line:
         return Line(self.p1.copy(), self.p2.copy())
     
     def __repr__(self):
-        return f'{self.__class__}: A={self.p1}, B={self.p2}'
+        return f'{self.__class__.__name__}: A={self.p1}, B={self.p2}'
+    
+    def print_eq(self):
+        A = self.p2.y - self.p1.y
+        B = self.p1.x - self.p2.x
+        C = self.p2.x * self.p1.y - self.p1.x * self.p2.y
+        return A, B, C
     
     def vertexes(self, quality: int = 0) -> list[Point]:
         return [self.p1, self.p2]
@@ -273,13 +278,13 @@ class Circle(Figure):
         
         A = x1 ** 2 + y1 ** 2
         B = 2 * x1 * (x0 - self.center.x) +  2 * y1 * (y0 - self.center.y)
-        C = (x0 - self.center.x) ** 2 + (y0 - self.center.y) ** 2
+        C = (x0 - self.center.x) ** 2 + (y0 - self.center.y) ** 2 - self.radius ** 2
         
         D = B ** 2 - 4 * A * C
         if D < 0:
             return False
-        t1 = (-B - sqrt(D)) / (4 * A * C)
-        t2 = (-B + sqrt(D)) / (4 * A * C)
+        t1 = (-B - sqrt(D)) / (2 * A)
+        t2 = (-B + sqrt(D)) / (2 * A)
         
         if 0 <= t1 <= 1:
             return True
@@ -396,6 +401,8 @@ class Triangle(Figure):
         d3 = Line(c, a).distance(circle.center)
         
         if sign(d1) < 0 and sign(d2) < 0 and sign(d3) < 0: # Если центр окружности внутри треугольника
+            return True
+        elif sign(d1) > 0 and sign(d2) > 0 and sign(d3) > 0: # Если центр окружности внутри треугольника
             return True
         elif circle.contains(a) or circle.contains(b) or circle.contains(c): # Если хотя бы одна из вершин треугольника внутри окружности
             return True
@@ -580,25 +587,77 @@ if __name__ == '__main__':
     l = Line(Point(0, 0), Point(1, 2))
     s = Triangle(Point(0, 0), Point(3, 3), Point(2, 1))
     
-    #print(c)
-    #c.rotate(c.center, np.deg2rad(45))
-    #print(c)
-    #c.rotate(Point(0, 0), np.deg2rad(45))
-    #print(c)
-
-    #print(l)
-    #l.rotate(Point(0, 0), np.deg2rad(45))
-    #print(l)
-    #l.rotate(Point(1, 2), np.deg2rad(-45))
-    #print(l)
-
-    #print(s)
-    #s.rotate(Point(0, 0), np.deg2rad(45))
-    #print(s)
-    #s.rotate(Point(1, 2), np.deg2rad(-45))
-    #print(s)
+    test_n = 4
+    if test_n == 0:
+        print(c)
+        c.rotate(c.center, np.deg2rad(45))
+        print(c)
+        c.rotate(Point(0, 0), np.deg2rad(45))
+        print(c)
     
-    c1 = Circle(4, 6, 2)
-    t1 = Triangle(Point(-0.160, 3.000), Point(-1.360, 3.600), Point(-1.360, 2.400))
-    print(c1.has_intersect(t1))
-    print(t1.has_intersect(c1))
+        print(l)
+        l.rotate(Point(0, 0), np.deg2rad(45))
+        print(l)
+        l.rotate(Point(1, 2), np.deg2rad(-45))
+        print(l)
+    
+        print(s)
+        s.rotate(Point(0, 0), np.deg2rad(45))
+        print(s)
+        s.rotate(Point(1, 2), np.deg2rad(-45))
+        print(s)
+    
+    elif test_n == 1:
+        c1 = Circle(4, 6, 2)
+        t1 = Triangle(Point(-0.160, 3.000), Point(-1.360, 3.600), Point(-1.360, 2.400))
+        print(c1.has_intersect(t1))
+        print(t1.has_intersect(c1))
+    elif test_n == 2:
+        t1 = Triangle(Point(2.290, 0.427), Point(1.212, 1.226), Point(1.004, 0.044))
+        c1 = Circle(1.5, 0.5, 0.28)
+        print(t1.has_intersect(c1))
+        print(c1.has_intersect(t1))
+        print(t1.contains(c1))
+        print(c1.contains(t1))
+    elif test_n == 3:
+        t1 = Triangle(Point(2.070, -0.103), Point(1.147, 0.872), Point(0.737, -0.256))
+        c1 = Circle(1.5, 0.5, 0.3)
+        print(t1.has_intersect(c1))
+        print(c1.has_intersect(t1))
+        print(t1.contains(c1))
+        print(c1.contains(t1))
+        
+        a, b, c = t1.vertices
+        d1 = Line(a, b).distance(c1.center)
+        d2 = Line(b, c).distance(c1.center)
+        d3 = Line(c, a).distance(c1.center)
+        
+        print(d1, d2, d3)
+        
+        es = [e for e in t1.edges()]
+        print(es[0], c1)
+        print(c1.has_intersect(es[0]))
+        
+        es[0].print_eq()
+    elif test_n == 4:
+        t1 = Triangle(Point(0.044, 0.634), Point(-0.878, 1.609), Point(-1.288, 0.481))
+        c1 = Circle(1.5, 0.5, 0.3)
+        print(t1.has_intersect(c1))
+        print(c1.has_intersect(t1))
+        print(t1.contains(c1))
+        print(c1.contains(t1))
+        
+        a, b, c = t1.vertices
+        d1 = Line(a, b).distance(c1.center)
+        d2 = Line(b, c).distance(c1.center)
+        d3 = Line(c, a).distance(c1.center)
+        
+        print(d1, d2, d3)
+        
+        es = [e for e in t1.edges()]
+        print(es[0], c1)
+        print(c1.has_intersect(es[0]))
+        print(es[1], c1)
+        print(c1.has_intersect(es[1]))
+        print(es[2], c1)
+        print(c1.has_intersect(es[2]))

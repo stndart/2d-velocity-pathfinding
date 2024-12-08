@@ -38,7 +38,9 @@ class Core(Overseer):
             a.update(deltatime)
         
         for s in all_sprites:
-            s.update_collisions(all_sprites)
+            if s.static:
+                continue
+            s.update_collisions(self.quadtree.get_collision_candidates(s))
             
         for s in all_sprites:
             s.update(deltatime)

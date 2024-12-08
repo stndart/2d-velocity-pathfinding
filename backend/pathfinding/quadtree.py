@@ -46,6 +46,12 @@ class QuadTree:
     def childless(self) -> bool:
         return not any([ch is not None for ch in self.children])
     
+    def iter_children(self) -> Iterable['QuadTree']:
+        for ch in self.children:
+            if ch is None:
+                continue
+            yield ch
+    
     def init_children(self):
         for ix, iy, rect in split_rectangle(self.rectangle):
             i = ix + iy * SPLIT_CONST
@@ -61,25 +67,33 @@ class QuadTree:
                 self.children[i] = None
 
     def optimize_tree(self) -> set[Sprite]:
-        lost = set()
         lost_by_children = set()
-        for ch in self.children:
-            if ch is None:
-                continue
-            lost_by_children = lost_by_children.union(ch.optimize_tree())
+        for ch in self.iter_children():
+            lost_by_children.update(ch.optimize_tree())
         
-        for s in chain(self.sprites, lost_by_children):
+        lost = set()
+        for s in self.sprites:
             if not self.contains(s):
-                self.sprites.discard(s)
                 lost.add(s)
-            for ch in self.children:
-                if ch is None:
-                    continue
+        self.sprites.difference_update(lost)
+        
+        chlost = set()
+        for s in lost_by_children:
+            if not self.contains(s):
+                chlost.add(s)
+        lost_by_children.difference_update(chlost)
+        lost.update(chlost)
+        
+        moved = set()
+        for s in chain(self.sprites, lost_by_children):
+            for ch in self.iter_children():
                 if ch.contains(s):
                     ch.add_sprites([s])
+                    moved.add(s)
                     break
-            else: # if not break encountered
-                self.sprites.add(s)
+        lost_by_children.difference_update(moved)
+        self.sprites.difference_update(moved)
+        self.sprites.update(lost_by_children)
         
         self.clear_children()
         return lost
@@ -88,7 +102,7 @@ class QuadTree:
         for s in sprites:
             if self.contains(s):
                 self.init_children()
-                for ch in self.children:
+                for ch in self.iter_children():
                     if ch.contains(s):
                         ch.add_sprites([s])
                         break
@@ -99,28 +113,31 @@ class QuadTree:
     
     def get_sprites(self) -> set[Sprite]:
         ans = set()
-        ans = ans.union(self.sprites)
-        for ch in self.children:
-            if ch is None:
-                continue
-            ans = ans.union(ch.get_sprites())
+        ans.update(self.sprites)
+        for ch in self.iter_children():
+            ans.update(ch.get_sprites())
         return ans
+    
+    def get_collision_candidates(self, s: Sprite) -> set[Sprite]:
+        if not self.rectangle.has_intersect(s.collision_shape):
+            return set()
+        res = set()
+        res.update(self.sprites)
+        for ch in self.iter_children():
+            res.update(ch.get_collision_candidates(s))
+        return res
     
     def get_sprites_lazy(self) -> Generator[Sprite, None, None]:
         for s in self.sprites:
             yield s
-        for ch in self.children:
-            if ch is None:
-                continue
+        for ch in self.iter_children():
             yield from ch.get_sprites_lazy()
     
     def get_quad_tree(self, s: Sprite) -> Optional['QuadTree']:
         if not self.rectangle.contains(s):
             return None
         
-        for ch in self.children:
-            if ch is None:
-                continue
+        for ch in self.iter_children():
             t = ch.get_quad_tree(s)
             if t is not None:
                 return t

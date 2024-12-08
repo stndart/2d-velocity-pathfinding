@@ -23,8 +23,8 @@ def main(core: Core):
 
 if __name__ == '__main__':
     back = Core()
-    GEN = True
     
+    GEN = True
     if not GEN:
         circ = make_sprite(Circle(4, 6, 2))
         tria = make_sprite(Triangle(
@@ -32,9 +32,11 @@ if __name__ == '__main__':
             Point(2, 1),
             Point(4, 3)
         ))
+        c2 = make_sprite(Circle(1.5, 0.5, 0.3))
         
         back.add_sprite(circ)
         back.add_sprite(tria)
+        back.add_sprite(c2)
     else:
         #sprites = SpriteGenerator(Rectangle(Point(-10, -15), Point(30, 15)), av_size=5).generate_sprites(5)
         sprites = SpriteGenerator(Rectangle(Point(0, 0), Point(15, 10)), av_size=5).generate_sprites(3)
@@ -51,12 +53,22 @@ if __name__ == '__main__':
     ])
     back.add_sprite(Sprite(route, None))
     
-    car = RoutingCar(route, turnspeed=0.8, maxspeed=2)
-    #car = SimpleCar(Point(-1, 3))
-    car.rotate(radians(90))
+    back._sprites[1].collision_shape.move(Point(3, 0))
+    back._sprites[1].mesh.move(Point(3, 0))
+    
+    car = RoutingCar(route, turnspeed=1.8, maxspeed=2)
+    #car = SimpleCar(Point(-1, 1))
     
     back.add_agent(car)
+    print(back.quadtree.print_tree(), '\n', '-'*30, '\n'*2)
     
-    print(back.quadtree.print_tree())
+    car.rotate(radians(-20))
+    #car.update(0)
+    car.speed = 1
+    #car.update(2.5)
+    #car.speed = 0.1
+
+    back.quadtree.optimize_tree()
+    print(back.quadtree.print_tree(), '\n', '-'*30, '\n'*2)
     
     main(back)
