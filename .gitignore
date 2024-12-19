@@ -2,6 +2,9 @@
 *.wpr
 *.wpu
 
+# VSCode workspace files
+*.code-workspace
+
 # compiled .pyc
 *.pyc
 
