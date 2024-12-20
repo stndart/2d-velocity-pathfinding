@@ -26,15 +26,15 @@ def main(core: Core):
 if __name__ == '__main__':
     back = Core()
     
-    GEN = True
+    GEN = False
     if not GEN:
-        gen_n = 1
+        gen_n = 0
         if gen_n == 0:
             circ = make_sprite(Circle(3, 6.5, 1.2))
             tria = make_sprite(Triangle(
                 Point(1, 4.9),
                 Point(2, 1),
-                Point(3.3, 3)
+                Point(3.4, 3)
             ))
             c2 = make_sprite(Circle(1.5, 0.8, 0.5))
             

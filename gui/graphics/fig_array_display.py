@@ -9,7 +9,7 @@ from backend import FigArray
 from backend.geometry import Point, Line
 
 class FigArrayItem(QAbstractGraphicsShapeItem):
-    def __init__(self, parent: QGraphicsScene, fig_array: FigArray = FigArray(), pen = QPen(), brush = QBrush(), pwidth: float = 0.2):
+    def __init__(self, parent: QGraphicsScene, fig_array: FigArray = FigArray(), pen = QPen(), brush = QBrush(), pwidth: float = 0.1):
         super().__init__()
         
         self.fig_array = fig_array

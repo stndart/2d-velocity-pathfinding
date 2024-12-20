@@ -141,6 +141,10 @@ class Point:
         else:
             raise NotImplementedError(f"__mul__ for args Point and {other.__class__} is not implemented")
     
+    def dot(self, other: Point) -> float:
+        # returns cross-product of two vectors
+        return self.x * other.y - self.y * other.x
+    
     def __truediv__(self, other: float) -> Point:
         return Point(self.x / other, self.y / other)
     
@@ -223,6 +227,7 @@ class Line:
         point_vec = p - self.p1       # Вектор от точки `p1` до `p`
         
         # Векторное произведение для нахождения площади параллелограмма
+        # cross_product = line_vec.dot(point_vec)
         cross_product = line_vec.x * point_vec.y - line_vec.y * point_vec.x
         line_length = abs(line_vec)  # Длина вектора прямой
 
@@ -240,52 +245,24 @@ class Line:
 
     def _intersects_line(self, other: Line) -> bool:
         """
-        Проверяет, пересекаются ли два отрезка.
+        Проверяет, пересекаются ли два отрезка исключая концы отрезков
         """
-        def orientation(p: Point, q: Point, r: Point) -> int:
-            """
-            Вычисляет ориентацию трёх точек:
-            0 -> коллинеарны,
-            1 -> по часовой стрелке,
-            2 -> против часовой стрелки.
-            """
-            val = (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y)
-            if is_close(val, 0):
-                return 0
-            return 1 if val > 0 else 2
-
-        def on_segment(p: Point, q: Point, r: Point) -> bool:
-            """
-            Проверяет, лежит ли точка q на отрезке pr.
-            """
-            return (min(p.x, r.x) - EPS <= q.x <= max(p.x, r.x) + EPS and
-                    min(p.y, r.y) - EPS <= q.y <= max(p.y, r.y) + EPS)
-
-        # Концы текущего и другого отрезка
-        p1, q1 = self.p1, self.p2
-        p2, q2 = other.p1, other.p2
-
-        # Определяем ориентации
-        o1 = orientation(p1, q1, p2)
-        o2 = orientation(p1, q1, q2)
-        o3 = orientation(p2, q2, p1)
-        o4 = orientation(p2, q2, q1)
-
-        # Основной случай: разные ориентации
-        if o1 != o2 and o3 != o4:
-            return True
-
-        # Специальные случаи: проверка на коллинеарность
-        if o1 == 0 and on_segment(p1, p2, q1):
-            return True
-        if o2 == 0 and on_segment(p1, q2, q1):
-            return True
-        if o3 == 0 and on_segment(p2, p1, q2):
-            return True
-        if o4 == 0 and on_segment(p2, q1, q2):
-            return True
-
-        return False
+        
+        d1 = self.distance(other.p1)
+        d2 = self.distance(other.p2)
+        
+        # Проверка на то, что обе точки второго отрезка лежат с одной стороны от первого отрезка
+        # if (self.p2 - self.p1).dot(other.p1 - self.p1) * (self.p2 - self.p1).dot(other.p2 - self.p1) > 0:
+        if sign(d1) * sign(d2) > 0:
+            return False
+        
+        # Если отрезки коллинеарны, проверить не лежат ли вершины второго внутри первого
+        if abs(d1) + abs(d2) < EPS:
+            return (self.p1 - other.p1) * (self.p2 - other.p1) < -EPS or \
+                   (self.p1 - other.p2) * (self.p2 - other.p2) < -EPS
+        
+        intersection = (other.p1 * abs(d2) + other.p2 * abs(d1)) / (abs(d1) + abs(d2))
+        return (self.p1 - intersection) * (self.p2 - intersection) < -EPS
 
 class Circle(Figure):
     def __init__(self, x: float, y: float, radius: float):
@@ -299,9 +276,9 @@ class Circle(Figure):
         return f'{self.__class__.__name__}: C={self.center}, R={self.radius:.3f}'
     
     def vertexes(self, quality: int = 0):
-        angles = np.linspace(0, np.pi * 2, quality)
-        px = self.center.x + np.cos(angles)
-        py = self.center.y + np.sin(angles)
+        angles = np.linspace(0, np.pi * 2, quality + 1)[:-1]
+        px = self.center.x + np.cos(angles) * self.radius
+        py = self.center.y + np.sin(angles) * self.radius
         return [Point(x, y) for x, y in zip(px, py)]
 
     def set_vertexes(self, vs: list[Point]):
@@ -316,24 +293,20 @@ class Circle(Figure):
         self.center = Point(*(vec.dot(rotmat))) + center
     
     def _intersects_line(self, line: Line) -> bool:
-        x0 = line.p1.x
-        y0 = line.p1.y
-        x1 = (line.p2 - line.p1).x
-        y1 = (line.p2 - line.p1).y
-        
-        A = x1 ** 2 + y1 ** 2
-        B = 2 * x1 * (x0 - self.center.x) +  2 * y1 * (y0 - self.center.y)
-        C = (x0 - self.center.x) ** 2 + (y0 - self.center.y) ** 2 - self.radius ** 2
-        
-        D = B ** 2 - 4 * A * C
-        if D < 0:
+        """
+        Checks if the segment has any point inside the circle
+        """
+        # if line is away from center of the circle
+        if abs(line.distance(self.center)) > self.radius - EPS:
             return False
-        t1 = (-B - sqrt(D)) / (2 * A)
-        t2 = (-B + sqrt(D)) / (2 * A)
-        
-        if 0 <= t1 <= 1:
+        line_vec = line.p2 - line.p1
+        p1_vec = line.p1 - self.center
+        p2_vec = line.p2 - self.center
+        # segment points are on different sides of the circle
+        if (line_vec * p1_vec) * (line_vec * p2_vec) < 0:
             return True
-        if 0 <= t2 <= 1:
+        # segment points are on the same side of the circle
+        if min(abs(line.p1 - self.center), abs(line.p2 - self.center)) < self.radius - EPS:
             return True
         return False
     
@@ -632,7 +605,7 @@ if __name__ == '__main__':
     l = Line(Point(0, 0), Point(1, 2))
     s = Triangle(Point(0, 0), Point(3, 3), Point(2, 1))
     
-    test_n = 4
+    test_n = 5
     if test_n == 0:
         print(c)
         c.rotate(c.center, np.deg2rad(45))
@@ -706,3 +679,29 @@ if __name__ == '__main__':
         print(c1.has_intersect(es[1]))
         print(es[2], c1)
         print(c1.has_intersect(es[2]))
+    elif test_n == 5:
+        tria = Triangle(
+            Point(1, 4.9),
+            Point(2, 1),
+            Point(3.4, 3)
+        )
+        L1 = Line(
+            Point(0, 3.125),
+            Point(6.25, 3.125)
+        )
+        L2 = Line(
+            Point(3.125, 0),
+            Point(3.125, 6.25)
+        )
+        e1, e2, e3 = tria.edges()
+        
+        assert e1.has_intersect(L1)
+        assert not e1.has_intersect(L2)
+        
+        assert e3.has_intersect(L1)
+        assert e3.has_intersect(L2)
+        
+        assert tria.has_intersect(L1)
+        assert tria.has_intersect(L2)
+        
+        print("Test #5 is successfull")

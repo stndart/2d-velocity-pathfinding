@@ -28,7 +28,7 @@ class FieldDisplay(GridDisplay):
         self.pen.setCapStyle(Qt.RoundCap)
         self.pen.setJoinStyle(Qt.RoundJoin)
 
-        self.pen2 = QPen(Qt.black, 0.12)
+        self.pen2 = QPen(Qt.black, 0.05) # для рисования линий
         self.pen2.setCapStyle(Qt.RoundCap)
         self.pen2.setJoinStyle(Qt.RoundJoin)
         

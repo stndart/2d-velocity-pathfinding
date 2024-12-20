@@ -7,7 +7,7 @@ from .buildgraph import Waypoint as Vertex
 from backend.geometry import Point, Line
 from backend.sprites import make_sprite
 
-#
+
 class QuadPathfinder(Dijkstra):
     def __init__(self, quadtree: QuadTree):
         self.quadtree = quadtree
@@ -52,4 +52,4 @@ class QuadPathfinder(Dijkstra):
                     shortest_path = path
         return shortest_path
 
-class QuadPathfinderFloyd(Floyd):
+# class QuadPathfinderFloyd(Floyd):

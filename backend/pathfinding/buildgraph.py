@@ -54,18 +54,34 @@ def check_collisions(qtree: QuadTree, p: Point|Line) -> bool:
 def build_graph_on_quadtree(qtree: QuadTree, mode: VertMode = VertMode.CORNERS, return_vertex_dict: bool = False, quality=10) -> Graph:
     vertex_dict: dict[QuadTree, list[Waypoint]] = dict()
     for q in qtree.dfs():
+        vertex_dict[q] = []
         wps: list[Waypoint] = []
         for p in build_vertexes_from_rect(q.rectangle, mode=mode):
             if check_collisions(qtree, p):
                 wps.append(Waypoint(p))
+        vertex_dict[q] += wps
+    
+    for q in qtree.dfs():
         for fig in q.sprites:
-            for p in fig.collision_shape.vertexes(quality=quality):
-                wps.append(Waypoint(p))
-        vertex_dict[q] = wps
+            vs = fig.collision_shape.vertexes(quality=quality)
+            for p in vs:
+                q2 = qtree.get_quad_tree(make_sprite(p))
+                wp = Waypoint(p)
+                if wp not in vertex_dict[q2]:
+                    vertex_dict[q2].append(Waypoint(p))
+
+    sp = list(q.sprites)[0] if q.sprites else None
+    cr = sp.collision_shape if sp else None
     
     G = Graph()
     for q in vertex_dict:
         vs = vertex_dict[q]
+        #print(len(vs))
+        # temp
+        for v in vs:
+            G.add_vertex(v)
+        x = 1
+        
         for v1, v2 in combinations(vs, 2):
             v1: Waypoint
             v2: Waypoint
