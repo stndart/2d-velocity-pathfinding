@@ -45,6 +45,9 @@ class Figure:
         pass
     
     def __repr__(self):
+        if self.vertexes() == []:
+            return f'{self.__class__.__name__}: []'
+
         arr = ''
         for i in self.vertexes()[:-1]:
             arr += f'{i}, '

@@ -15,10 +15,13 @@ class QuadPathfinder(Dijkstra):
         
         super().__init__(graph)
 
-    def find_path(self, start: Point, goal: Point):
+    def find_path(self, start: Point, goal: Point) -> list[Vertex]:
         # Implement the pathfinding logic using the quadtree
         
         if check_collisions(self.quadtree, start) or check_collisions(self.quadtree, goal):
+            print('start or goal inside an obstacle')
+            print(start, check_collisions(self.quadtree, start))
+            print(goal, check_collisions(self.quadtree, goal))
             return [] # either start or goal is inside an obstacle
         
         start_node = Vertex(start)
@@ -39,17 +42,24 @@ class QuadPathfinder(Dijkstra):
                     end_vertices.append(v)
         
         if not start_vertices or not end_vertices:
+            print('no adjacent vertices found')
             return [] # no adjacent vertices to start or goal found
         
         # Now we have to find the shortest path between start and goal vertices
         # using the Dijkstra algorithm
 
+        print(start_vertices, end_vertices)
+
         shortest_path = []
+        shortest_path_len = float('inf')
         for start_v in start_vertices:
             for end_v in end_vertices:
-                path = super().find_path(start_v, end_v)
-                if not shortest_path or len(path) < len(shortest_path):
+                path: list[Vertex] = super().find_path(start_v, end_v)
+                new_path_len = self.find_path_length(path) if path else float('inf')
+                new_path_len += path[-1].coords.distance_to(goal.coords) if path else float('inf')
+                if new_path_len < shortest_path_len:
                     shortest_path = path
+                    shortest_path_len = new_path_len
         return shortest_path
 
 # class QuadPathfinderFloyd(Floyd):
