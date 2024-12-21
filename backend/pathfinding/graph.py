@@ -35,9 +35,12 @@ class GraphVertex:
         self.edges.pop(GraphEdge(self, other))
 
 class GraphEdge:
-    def __init__(self, v1: GraphVertex, v2: GraphVertex):
+    def __init__(self, v1: GraphVertex, v2: GraphVertex, cost: float = 1):
         self.v1 = v1
         self.v2 = v2
+        
+        assert cost >= 0
+        self.cost = cost
     
     def __copy__(self):
         raise TypeError(f"Copying of {self.__class__.__name__} is not allowed")

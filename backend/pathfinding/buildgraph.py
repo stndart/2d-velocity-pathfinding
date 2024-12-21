@@ -44,12 +44,13 @@ class Waypoint(Vertex):
     def __repr__(self):
         return self.coords.__repr__()
 
+# returns True if p collides with anything in qtree
 def check_collisions(qtree: QuadTree, p: Point|Line) -> bool:
     ts = make_sprite(p)  # Eeh, but ok
     for s in qtree.get_collision_candidates(ts):
         if ts.collision_shape.has_intersect(s.collision_shape):
-            return False
-    return True
+            return True
+    return False
 
 def build_graph_on_quadtree(qtree: QuadTree, mode: VertMode = VertMode.CORNERS, return_vertex_dict: bool = False, quality=10) -> Graph:
     vertex_dict: dict[QuadTree, list[Waypoint]] = dict()
@@ -57,7 +58,7 @@ def build_graph_on_quadtree(qtree: QuadTree, mode: VertMode = VertMode.CORNERS, 
         vertex_dict[q] = []
         wps: list[Waypoint] = []
         for p in build_vertexes_from_rect(q.rectangle, mode=mode):
-            if check_collisions(qtree, p):
+            if not check_collisions(qtree, p):
                 wps.append(Waypoint(p))
         vertex_dict[q] += wps
     
@@ -85,7 +86,7 @@ def build_graph_on_quadtree(qtree: QuadTree, mode: VertMode = VertMode.CORNERS, 
         for v1, v2 in combinations(vs, 2):
             v1: Waypoint
             v2: Waypoint
-            if check_collisions(qtree, Line(v1.coords, v2.coords)):
+            if not check_collisions(qtree, Line(v1.coords, v2.coords)):
                 G.add_edge(v1, v2, cost=v1.distance(v2))
     
     return G if not return_vertex_dict else (G, vertex_dict)
