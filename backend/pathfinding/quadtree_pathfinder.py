@@ -8,12 +8,13 @@ from backend.geometry import Point, Line
 from backend.sprites import make_sprite
 
 from .graph import GraphEdge as Edge
+from .buildgraph import VertMode
 
 class QuadPathfinder(Dijkstra):
     def __init__(self, quadtree: QuadTree):
         self.quadtree = quadtree
         self.vertex_dict: dict[QuadTree, list[Vertex]]
-        graph, self.vertex_dict = build_graph_on_quadtree(quadtree, return_vertex_dict=True)
+        graph, self.vertex_dict = build_graph_on_quadtree(quadtree, mode=VertMode.ALL, return_vertex_dict=True)
         
         super().__init__(graph)
     
@@ -62,31 +63,16 @@ class QuadPathfinder(Dijkstra):
         
         myv = None
         for v in start_vertices:
-            if v.coords == Point(0, 6.25):
+            if v.coords == Point(1, 4.9):
                 myv = v
                 break
-        
-        for q in self.vertex_dict:
-            if myv in self.vertex_dict[q]:
-                print('q is', q)
-        for e, cost in myv.edges.items():
-            print(e, cost)
-        print()
-        
-        for v in self.graph.vertexes:
-            if v.has_edge_to(myv):
-                print(f'{myv} has edge to {v}')
-            if v.coords == Point(2.2, 7):
-                print('00', v.has_edge_to(myv))
-                for e, cost in v.edges.items():
-                    print(e, cost)
-                ne = Edge(v, myv)
-                es = v.edges
-                kes = list(es.keys())
-                print('ne', ne, 'kes[1]', kes[1])
-                print('ne == kes[1]', ne == kes[1])
-                print('ne.v1 == kes[1].v1', ne.v1 == kes[1].v1)
-                print('ne.v2 == kes[1].v2', ne.v2 == kes[1].v2)
+        if myv:
+            for q in self.vertex_dict:
+                if myv in self.vertex_dict[q]:
+                    print('q is', q)
+            for e, cost in myv.edges.items():
+                print(e, cost)
+            print()
 
         shortest_path = []
         shortest_path_len = float('inf')

@@ -58,11 +58,11 @@ def generate_launch(back: Core, launch_configuration: int = 0, generate: bool = 
                 Point(2, 1),
                 Point(3.4, 3)
             ))
-            c2 = make_sprite(Circle(1.5, 0.8, 0.5))
+            #c2 = make_sprite(Circle(1.5, 0.8, 0.5))
             
             back.add_sprite(tri2)
             back.add_sprite(tria)
-            back.add_sprite(c2)
+            #back.add_sprite(c2)
     else:
         if gen_configuration == 0:
             sprites = SpriteGenerator(Rectangle(Point(-10, -15), Point(30, 15)), av_size=5).generate_sprites(5)
@@ -106,13 +106,14 @@ def generate_launch(back: Core, launch_configuration: int = 0, generate: bool = 
         back.add_sprite(GS)
     
     elif launch_configuration == 3:
-        G = build_graph_on_quadtree(back.quadtree, mode=VertMode.ALL)
-        GS = GraphSprite(G)
-        back.add_sprite(GS)
-
+        print(back.quadtree.print_tree(), '\n', '-'*30, '\n'*2)
+        
         start, dest = Point(-1, 0), Point(4, 7)
         pathfinder = QuadPathfinder(back.quadtree)
         path = [start] + pathfinder.find_path(start, dest) + [dest]
         #path = [start, dest]
         print('path', path)
         back.add_sprite(Sprite(Path(path), None))
+        
+        gs = GraphSprite(pathfinder.graph)
+        back.add_sprite(gs)

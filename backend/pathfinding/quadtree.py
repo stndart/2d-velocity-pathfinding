@@ -165,6 +165,11 @@ class QuadTree:
             if len(ch.sprites) == 0 and ch.childless():
                 del ch
                 self.children[i] = None
+    
+    def recursive_parents(self) -> Generator['QuadTree', None, None]:
+        if self.parent is not None:
+            yield self.parent
+            yield from self.parent.recursive_parents()
 
     def optimize_tree(self) -> set[Sprite]:
         lost_by_children = set()
