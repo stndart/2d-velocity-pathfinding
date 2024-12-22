@@ -254,15 +254,16 @@ class Line:
         d1 = self.distance(other.p1)
         d2 = self.distance(other.p2)
         
+        # Если отрезки коллинеарны, проверить не лежат ли вершины одного внутри другого
+        if abs(d1) + abs(d2) < 2 * EPS:
+            prod1 = (self.p1 - other.p1) * (self.p2 - other.p2)
+            prod2 = (self.p1 - other.p2) * (self.p2 - other.p1)
+            return any([prod1 < 0, prod2 < 0])
+        
         # Проверка на то, что обе точки второго отрезка лежат с одной стороны от первого отрезка
         # if (self.p2 - self.p1).dot(other.p1 - self.p1) * (self.p2 - self.p1).dot(other.p2 - self.p1) > 0:
         if sign(d1) * sign(d2) > 0:
             return False
-        
-        # Если отрезки коллинеарны, проверить не лежат ли вершины второго внутри первого
-        if abs(d1) + abs(d2) < EPS:
-            return (self.p1 - other.p1) * (self.p2 - other.p1) < -EPS or \
-                   (self.p1 - other.p2) * (self.p2 - other.p2) < -EPS
         
         intersection = (other.p1 * abs(d2) + other.p2 * abs(d1)) / (abs(d1) + abs(d2))
         return (self.p1 - intersection) * (self.p2 - intersection) < -EPS
@@ -465,12 +466,20 @@ class Rectangle(Figure):
         raise NotImplementedError("Rectangle can't be rotated")
     
     def corners(self) -> list[Point]:
+        """
+        Returns corners in the following order:
+        bottom_left, top_left, top_right, bottom_right
+        """
         p1, p3 = self.bottom_left, self.top_right
         p2 = Point(p1.x, p3.y)
         p4 = Point(p3.x, p1.y)
         return [p1, p2, p3, p4]
     
     def edges(self) -> list[Line]:
+        """
+        Returns edges in the following order:
+        left, top, right, bottom
+        """
         p1, p2, p3, p4 = self.corners()
         return [Line(p1, p2), Line(p2, p3), Line(p3, p4), Line(p4, p1)]
     
@@ -500,8 +509,8 @@ class Rectangle(Figure):
         Checks if intersection of two figures is not empty
         """
         if isinstance(other, Point):
-            return (self.bottom_left.x - EPS <= other.x <= self.top_right.x + EPS and
-                    self.bottom_left.y - EPS <= other.y <= self.top_right.y + EPS)
+            return (self.bottom_left.x + EPS <= other.x <= self.top_right.x - EPS and
+                    self.bottom_left.y + EPS <= other.y <= self.top_right.y - EPS)
         elif isinstance(other, Line):
             return any([other.has_intersect(e) for e in self.edges()]) or any([self.contains(v) for v in other.vertexes()])
         elif isinstance(other, Circle):

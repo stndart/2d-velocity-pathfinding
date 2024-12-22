@@ -1,5 +1,5 @@
 from enum import Enum
-from itertools import combinations
+from itertools import chain, combinations
 from typing import Iterable, TypeVar, Optional
 
 from .graph import Graph
@@ -89,24 +89,22 @@ def build_graph_on_quadtree(qtree: QuadTree, mode: VertMode = VertMode.CORNERS, 
                 wp = Waypoint(p)
                 if wp not in vertex_dict[q2]:
                     vertex_dict[q2].append(Waypoint(p))
-
-    sp = list(q.sprites)[0] if q.sprites else None
-    cr = sp.collision_shape if sp else None
     
     G = Graph()
     for q in vertex_dict:
-        vs = vertex_dict[q]
-        #print(len(vs))
-        # temp
-        for v in vs:
+        for v in vertex_dict[q]:
             G.add_vertex(v)
-        x = 1
-        
-        for v1, v2 in combinations(vs, 2):
-            v1: Waypoint
-            v2: Waypoint
-            if not check_collisions(qtree, Line(v1.coords, v2.coords)):
-                G.add_edge(v1, v2, cost=v1.distance(v2))
-    
     G, vertex_dict = merge_vertexes(G, vertex_dict)
+
+    for q in vertex_dict:
+        for v1 in vertex_dict[q]:
+            for v2 in chain(vertex_dict[q], q.find_adjacent(direction='all')):
+                v2: Waypoint
+                if v1 == v2:
+                    continue
+                if not check_collisions(qtree, Line(v1.coords, v2.coords)):
+                    G.add_edge(v1, v2, cost=v1.distance(v2))
+    
+    # maybe redundant
+    # G, vertex_dict = merge_vertexes(G, vertex_dict)
     return G if not return_vertex_dict else (G, vertex_dict)
