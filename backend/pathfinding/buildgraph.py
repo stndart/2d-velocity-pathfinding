@@ -1,5 +1,6 @@
 from enum import Enum
 from itertools import combinations
+from typing import Iterable, TypeVar, Optional
 
 from .graph import Graph
 from .graph import GraphVertex as Vertex
@@ -52,6 +53,24 @@ def check_collisions(qtree: QuadTree, p: Point|Line) -> bool:
             return True
     return False
 
+T = TypeVar('T')
+def get_matching_item(container: Iterable[T], item: T) -> Optional[T]:
+    return next((x for x in container if x == item), None)
+
+def merge_vertexes(g: Graph, vertex_dict: dict[QuadTree, list[Waypoint]]):
+    new_vertex_dict: dict[QuadTree, list[Waypoint]] = dict()
+
+    for q in vertex_dict:
+        for v in vertex_dict[q]:
+            if v in g.vertexes:
+                v_replace = get_matching_item(g.vertexes, v)
+                v_replace = v_replace if v_replace else v
+                if q in new_vertex_dict:
+                    new_vertex_dict[q].append(v_replace)
+                else:
+                    new_vertex_dict[q] = [v_replace]
+    return g, new_vertex_dict
+
 def build_graph_on_quadtree(qtree: QuadTree, mode: VertMode = VertMode.CORNERS, return_vertex_dict: bool = False, quality=10) -> Graph:
     vertex_dict: dict[QuadTree, list[Waypoint]] = dict()
     for q in qtree.dfs():
@@ -89,4 +108,5 @@ def build_graph_on_quadtree(qtree: QuadTree, mode: VertMode = VertMode.CORNERS, 
             if not check_collisions(qtree, Line(v1.coords, v2.coords)):
                 G.add_edge(v1, v2, cost=v1.distance(v2))
     
+    G, vertex_dict = merge_vertexes(G, vertex_dict)
     return G if not return_vertex_dict else (G, vertex_dict)

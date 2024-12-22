@@ -7,10 +7,12 @@ from .buildgraph import Waypoint as Vertex
 from backend.geometry import Point, Line
 from backend.sprites import make_sprite
 
+from .graph import GraphEdge as Edge
 
 class QuadPathfinder(Dijkstra):
     def __init__(self, quadtree: QuadTree):
         self.quadtree = quadtree
+        self.vertex_dict: dict[QuadTree, list[Vertex]]
         graph, self.vertex_dict = build_graph_on_quadtree(quadtree, return_vertex_dict=True)
         
         super().__init__(graph)
@@ -31,14 +33,14 @@ class QuadPathfinder(Dijkstra):
             return [] # either start or goal is inside an obstacle
 
         start_quad = self.quadtree.get_quad_tree(make_sprite(start))
-        start_vertices = []
+        start_vertices: list[Vertex] = []
         for q in start_quad.dfs():
             for v in self.vertex_dict[q]:
                 if not check_collisions(self.quadtree, Line(start, v.coords)):
                     start_vertices.append(v)
 
         end_quad = self.quadtree.get_quad_tree(make_sprite(goal))
-        end_vertices = []
+        end_vertices: list[Vertex] = []
         for q in end_quad.dfs():
             for v in self.vertex_dict[q]:
                 if not check_collisions(self.quadtree, Line(goal, v.coords)):
@@ -51,7 +53,40 @@ class QuadPathfinder(Dijkstra):
         # Now we have to find the shortest path between start and goal vertices
         # using the Dijkstra algorithm
 
-        print(start_vertices, end_vertices)
+        #print("Start vertices:")
+        #for v in start_vertices:
+            #print(v)
+        #print("End vertices:")
+        #for v in end_vertices:
+            #print(v)
+        
+        myv = None
+        for v in start_vertices:
+            if v.coords == Point(0, 6.25):
+                myv = v
+                break
+        
+        for q in self.vertex_dict:
+            if myv in self.vertex_dict[q]:
+                print('q is', q)
+        for e, cost in myv.edges.items():
+            print(e, cost)
+        print()
+        
+        for v in self.graph.vertexes:
+            if v.has_edge_to(myv):
+                print(f'{myv} has edge to {v}')
+            if v.coords == Point(2.2, 7):
+                print('00', v.has_edge_to(myv))
+                for e, cost in v.edges.items():
+                    print(e, cost)
+                ne = Edge(v, myv)
+                es = v.edges
+                kes = list(es.keys())
+                print('ne', ne, 'kes[1]', kes[1])
+                print('ne == kes[1]', ne == kes[1])
+                print('ne.v1 == kes[1].v1', ne.v1 == kes[1].v1)
+                print('ne.v2 == kes[1].v2', ne.v2 == kes[1].v2)
 
         shortest_path = []
         shortest_path_len = float('inf')
@@ -59,10 +94,14 @@ class QuadPathfinder(Dijkstra):
             for end_v in end_vertices:
                 path: list[Vertex] = super().find_path(start_v, end_v)
                 new_path_len = self.find_path_length(path, Vertex(start), Vertex(goal)) if path else float('inf')
+                if start_v.coords == Point(0, 6.25) and end_v.coords == Point(2.2, 7):
+                    print("?", shortest_path_len, new_path_len)
                 if new_path_len < shortest_path_len:
                     shortest_path = path
                     shortest_path_len = new_path_len
         
+        print('shortest path length:', shortest_path_len)
+        print("shortest path:", shortest_path)
         return [vert.coords for vert in shortest_path]
 
 # class QuadPathfinderFloyd(Floyd):

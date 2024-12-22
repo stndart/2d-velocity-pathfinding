@@ -1,4 +1,9 @@
 from multipledispatch import dispatch
+from typing import TypeVar, Iterable, Optional
+
+T = TypeVar('T')
+def get_matching_item(container: Iterable[T], item: T) -> Optional[T]:
+    return next((x for x in container if x == item), None)
 
 class GraphVertex:
     def __init__(self):
@@ -59,6 +64,9 @@ class GraphEdge:
     
     def other(self, other: GraphVertex):
         return self.v2 if self.v1 is other else self.v1
+    
+    def __repr__(self):
+        return f'Edge: {self.v1} -> {self.v2}'
 
 class Graph:
     """
@@ -68,6 +76,21 @@ class Graph:
         self.vertexes = vertexes
     
     def add_vertex(self, vertex: GraphVertex):
+        v_replace = get_matching_item(self.vertexes, vertex)
+        v_replace = v_replace if v_replace else vertex
+
+        # fixing edges
+        new_edges = dict()
+        for edge in vertex.edges:
+            if edge.v1 is vertex and get_matching_item(self.vertexes, edge.v2):
+                new_edge = GraphEdge(v_replace, get_matching_item(self.vertexes, edge.v2))
+            elif edge.v2 is vertex and get_matching_item(self.vertexes, edge.v1):
+                new_edge = GraphEdge(get_matching_item(self.vertexes, edge.v1), v_replace)
+            else:
+                raise ValueError(f"Vertex {vertex} has an edge with no connection to itself")
+            new_edges[new_edge] = vertex.edges[edge]
+        
+        v_replace.edges.update(new_edges)
         self.vertexes.add(vertex)
         
     def remove_vertex(self, vertex: GraphVertex):
@@ -77,10 +100,11 @@ class Graph:
     
     @dispatch(GraphVertex, GraphVertex, cost=float)
     def add_edge(self, v1: GraphVertex, v2: GraphVertex, cost: float = 1.0):
+        self.add_vertex(v1)
+        self.add_vertex(v2)
+        v1, v2 = get_matching_item(self.vertexes, v1), get_matching_item(self.vertexes, v2)
         v1.add_edge_to(v2, cost)
         v2.add_edge_to(v1, cost)
-        self.vertexes.add(v1)
-        self.vertexes.add(v2)
     
     @dispatch(GraphEdge, cost=float)
     def add_edge(self, e: GraphEdge, cost: float = 1.0):
