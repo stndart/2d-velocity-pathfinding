@@ -12,14 +12,26 @@ from backend.sprites import make_sprite
 from .graph import GraphEdge as Edge
 from .buildgraph import VertMode
 
+# For profiling purposes
+import cProfile
+import pstats
+
 class QuadPathfinder(Dijkstra):
     def __init__(self, quadtree: QuadTree):
         self.quadtree = quadtree
         self.vertex_dict: dict[QuadTree, list[Vertex]]
         
+        
+        profiler = cProfile.Profile()
+        profiler.enable()
+        
         ts = time()
         graph, self.vertex_dict = build_graph_on_quadtree(quadtree, mode=VertMode.ALL, return_vertex_dict=True)
         print(f'Building graph took {time() - ts: .2f}s')
+    
+        profiler.disable()
+        stats = pstats.Stats(profiler).sort_stats('cumtime')
+        stats.print_stats()
         
         super().__init__(graph)
     
@@ -58,6 +70,8 @@ class QuadPathfinder(Dijkstra):
         
         # Now we have to find the shortest path between start and goal vertices
         # using the Dijkstra algorithm
+        
+        print(f'approx is {len(start_vertices)}x{len(end_vertices)}={len(start_vertices) * len(end_vertices)}')
 
         shortest_path = []
         shortest_path_len = float('inf')
