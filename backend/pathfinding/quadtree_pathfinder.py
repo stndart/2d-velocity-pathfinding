@@ -1,3 +1,5 @@
+from time import time
+
 from .pathfinder import Dijkstra, Floyd
 from .graph import Graph
 from .quadtree import QuadTree
@@ -14,7 +16,10 @@ class QuadPathfinder(Dijkstra):
     def __init__(self, quadtree: QuadTree):
         self.quadtree = quadtree
         self.vertex_dict: dict[QuadTree, list[Vertex]]
+        
+        ts = time()
         graph, self.vertex_dict = build_graph_on_quadtree(quadtree, mode=VertMode.ALL, return_vertex_dict=True)
+        print(f'Building graph took {time() - ts: .2f}s')
         
         super().__init__(graph)
     
@@ -54,40 +59,18 @@ class QuadPathfinder(Dijkstra):
         # Now we have to find the shortest path between start and goal vertices
         # using the Dijkstra algorithm
 
-        #print("Start vertices:")
-        #for v in start_vertices:
-            #print(v)
-        #print("End vertices:")
-        #for v in end_vertices:
-            #print(v)
-        
-        myv = None
-        for v in start_vertices:
-            if v.coords == Point(1, 4.9):
-                myv = v
-                break
-        if myv:
-            for q in self.vertex_dict:
-                if myv in self.vertex_dict[q]:
-                    print('q is', q)
-            for e, cost in myv.edges.items():
-                print(e, cost)
-            print()
-
         shortest_path = []
         shortest_path_len = float('inf')
         for start_v in start_vertices:
             for end_v in end_vertices:
                 path: list[Vertex] = super().find_path(start_v, end_v)
                 new_path_len = self.find_path_length(path, Vertex(start), Vertex(goal)) if path else float('inf')
-                if start_v.coords == Point(0, 6.25) and end_v.coords == Point(2.2, 7):
-                    print("?", shortest_path_len, new_path_len)
                 if new_path_len < shortest_path_len:
                     shortest_path = path
                     shortest_path_len = new_path_len
         
-        print('shortest path length:', shortest_path_len)
-        print("shortest path:", shortest_path)
+        #print('shortest path length:', shortest_path_len)
+        #print("shortest path:", shortest_path)
         return [vert.coords for vert in shortest_path]
 
 # class QuadPathfinderFloyd(Floyd):

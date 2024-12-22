@@ -1,3 +1,4 @@
+from time import time
 from math import radians
 
 from backend import Core
@@ -106,13 +107,13 @@ def generate_launch(back: Core, launch_configuration: int = 0, generate: bool = 
         back.add_sprite(GS)
     
     elif launch_configuration == 3:
-        print(back.quadtree.print_tree(), '\n', '-'*30, '\n'*2)
-        
         start, dest = Point(-1, 0), Point(4, 7)
         pathfinder = QuadPathfinder(back.quadtree)
+        
+        ts = time()
         path = [start] + pathfinder.find_path(start, dest) + [dest]
-        #path = [start, dest]
-        print('path', path)
+        print(f"Searching path took {time() - ts: .2f}s")
+        #print('path', path)
         back.add_sprite(Sprite(Path(path), None))
         
         gs = GraphSprite(pathfinder.graph)

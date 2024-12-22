@@ -96,11 +96,8 @@ def build_graph_on_quadtree(qtree: QuadTree, mode: VertMode = VertMode.CORNERS, 
             G.add_vertex(v)
     G, vertex_dict = merge_vertexes(G, vertex_dict)
 
-    print('build')
     for q in vertex_dict:
         for v1 in vertex_dict[q]:
-            if v1.coords == Point(2.2, 7):
-                print("My point!", q)
             for tq in chain([q], q.find_adjacent(direction='all'), q.recursive_parents()):
                 for v2 in vertex_dict[tq]:
                     v2: Waypoint
