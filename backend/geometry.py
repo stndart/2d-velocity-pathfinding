@@ -512,7 +512,9 @@ class Rectangle(Figure):
             return (self.bottom_left.x + EPS <= other.x <= self.top_right.x - EPS and
                     self.bottom_left.y + EPS <= other.y <= self.top_right.y - EPS)
         elif isinstance(other, Line):
-            return any([other.has_intersect(e) for e in self.edges()]) or any([self.contains(v) for v in other.vertexes()])
+            return any([other.has_intersect(e) for e in self.edges()]) or\
+                   any([self.contains(v) for v in other.vertexes()]) or \
+                   self.contains((other.p1 + other.p2) / 2)
         elif isinstance(other, Circle):
             return self._intersects_circle(other)
         elif isinstance(other, (Triangle, Rectangle)):
@@ -617,7 +619,7 @@ if __name__ == '__main__':
     l = Line(Point(0, 0), Point(1, 2))
     s = Triangle(Point(0, 0), Point(3, 3), Point(2, 1))
     
-    test_n = 5
+    test_n = 6
     if test_n == 0:
         print(c)
         c.rotate(c.center, np.deg2rad(45))
@@ -669,6 +671,7 @@ if __name__ == '__main__':
         print(c1.has_intersect(es[0]))
         
         es[0].print_eq()
+    
     elif test_n == 4:
         t1 = Triangle(Point(0.044, 0.634), Point(-0.878, 1.609), Point(-1.288, 0.481))
         c1 = Circle(1.5, 0.5, 0.3)
@@ -691,6 +694,7 @@ if __name__ == '__main__':
         print(c1.has_intersect(es[1]))
         print(es[2], c1)
         print(c1.has_intersect(es[2]))
+    
     elif test_n == 5:
         tria = Triangle(
             Point(1, 4.9),
@@ -717,3 +721,15 @@ if __name__ == '__main__':
         assert tria.has_intersect(L2)
         
         print("Test #5 is successfull")
+        
+    elif test_n == 6:
+        L1 = Line(Point(0, 0), Point(10, 10))
+        L2 = Line(Point(0, 0), Point(50, 50))
+        L3 = Line(Point(0, 0), Point(60, 60))
+        R = Rectangle(Point(0, 0), Point(50, 50))
+        
+        assert R.has_intersect(L1)
+        assert R.has_intersect(L2)
+        assert R.has_intersect(L3)
+        
+        print("Test #6 is successfull")
