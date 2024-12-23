@@ -26,7 +26,7 @@ class QuadPathfinder(Dijkstra):
         
         ts = time()
         graph, self.vertex_dict = build_graph_on_quadtree(quadtree, mode=VertMode.ALL, return_vertex_dict=True)
-        print(f'Building graph took {time() - ts: .2f}s')
+        print(f'Building graph of {len(graph.vertexes)} vertices took {time() - ts: .2f}s')
     
         # profiler.disable()
         # writes profiler stats to a file

@@ -71,7 +71,7 @@ def merge_vertexes(g: Graph, vertex_dict: dict[QuadTree, list[Waypoint]]):
                     new_vertex_dict[q] = [v_replace]
     return g, new_vertex_dict
 
-def build_graph_on_quadtree(qtree: QuadTree, mode: VertMode = VertMode.CORNERS, return_vertex_dict: bool = False, quality=10) -> Graph:
+def build_graph_on_quadtree(qtree: QuadTree, mode: VertMode = VertMode.CORNERS, return_vertex_dict: bool = False, quality=10) -> tuple[Graph, dict[QuadTree, list[Waypoint]]]:
     vertex_dict: dict[QuadTree, list[Waypoint]] = dict()
     for q in qtree.dfs():
         vertex_dict[q] = []
