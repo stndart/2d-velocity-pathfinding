@@ -94,7 +94,9 @@ def build_graph_on_quadtree(qtree: QuadTree, mode: VertMode = VertMode.CORNERS, 
     for q in vertex_dict:
         for v in vertex_dict[q]:
             G.add_vertex(v)
+    # print(f"Before merging: {len(G.vertexes)}")
     G, vertex_dict = merge_vertexes(G, vertex_dict)
+    # print(f"After merging: {len(G.vertexes)}")
 
     for q in vertex_dict:
         for v1 in vertex_dict[q]:
@@ -102,6 +104,8 @@ def build_graph_on_quadtree(qtree: QuadTree, mode: VertMode = VertMode.CORNERS, 
                 for v2 in vertex_dict[tq]:
                     v2: Waypoint
                     if v1 == v2:
+                        continue
+                    if G.has_edge(v1, v2):
                         continue
                     if not check_collisions(qtree, Line(v1.coords, v2.coords)):
                         G.add_edge(v1, v2, cost=v1.distance(v2))

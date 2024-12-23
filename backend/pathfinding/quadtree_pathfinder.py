@@ -21,17 +21,19 @@ class QuadPathfinder(Dijkstra):
         self.quadtree = quadtree
         self.vertex_dict: dict[QuadTree, list[Vertex]]
         
-        
-        profiler = cProfile.Profile()
-        profiler.enable()
+        # profiler = cProfile.Profile()
+        # profiler.enable()
         
         ts = time()
         graph, self.vertex_dict = build_graph_on_quadtree(quadtree, mode=VertMode.ALL, return_vertex_dict=True)
         print(f'Building graph took {time() - ts: .2f}s')
     
-        profiler.disable()
-        stats = pstats.Stats(profiler).sort_stats('cumtime')
-        stats.print_stats()
+        # profiler.disable()
+        # writes profiler stats to a file
+        # profiler.dump_stats('profiling/quadtree_pathfinder.prof')
+
+        # stats = pstats.Stats(profiler).sort_stats('cumtime')
+        # stats.print_stats()
         
         super().__init__(graph)
     

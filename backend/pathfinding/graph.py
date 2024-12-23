@@ -77,6 +77,9 @@ class Graph:
     
     def add_vertex(self, vertex: GraphVertex):
         v_replace = get_matching_item(self.vertexes, vertex)
+        if v_replace is vertex:
+            return
+
         v_replace = v_replace if v_replace else vertex
 
         # fixing edges
@@ -109,6 +112,9 @@ class Graph:
     @dispatch(GraphEdge, cost=float)
     def add_edge(self, e: GraphEdge, cost: float = 1.0):
         self.add_edge(e.v1, e.v2, cost=cost)
+    
+    def has_edge(self, v1: GraphVertex, v2: GraphVertex):
+        return v1.has_edge_to(v2)
 
 class DirectedGraph(Graph):
     """

@@ -512,9 +512,9 @@ class Rectangle(Figure):
             return (self.bottom_left.x + EPS <= other.x <= self.top_right.x - EPS and
                     self.bottom_left.y + EPS <= other.y <= self.top_right.y - EPS)
         elif isinstance(other, Line):
-            return any([other.has_intersect(e) for e in self.edges()]) or\
-                   any([self.contains(v) for v in other.vertexes()]) or \
-                   self.contains((other.p1 + other.p2) / 2)
+            return self.contains((other.p1 + other.p2) / 2) or\
+                   any([other.has_intersect(e) for e in self.edges()]) or\
+                   any([self.contains(v) for v in other.vertexes()])
         elif isinstance(other, Circle):
             return self._intersects_circle(other)
         elif isinstance(other, (Triangle, Rectangle)):
