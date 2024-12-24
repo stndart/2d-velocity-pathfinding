@@ -2,9 +2,10 @@ from typing import Optional
 from random import choice, random, gauss
 from math import pi, cos, sin, atan2
 
-from .sprite import make_sprite, Sprite
+from backend.sprites.sprite import make_sprite, Sprite
 from backend.geometry import Figure, Rectangle, Triangle, Circle, Point
-from .noisegen import fill_dots, mean_min_distance
+from .perlin_noise_generator import fill_dots as fill_dots_perlin, mean_min_distance
+from .grid_noise_generator import fill_dots as fill_dots_grid
 
 def random_not_small(m: float):
     return (random() * 0.95 + 0.05) * m
@@ -19,7 +20,23 @@ def random_uniform(a: float, b: float) -> float:
     return random() * (b - a) + a
 
 class SpriteGenerator:
-    def __init__(self, field: Rectangle, types: list[type] = [Triangle, Circle], avg_size: float = 3, precision: float = 0.1):
+    def __init__(self, field: Rectangle, types: list[type] = [Triangle, Circle],
+                 avg_size: float = 3, precision: float = 0.1,
+                 method: str = 'grid'):
+        """_summary_
+
+        Args:
+            field (Rectangle): _description_
+            types (list[type], optional): _description_. Defaults to [Triangle, Circle].
+            avg_size (float, optional): _description_. Defaults to 3.
+            precision (float, optional): _description_. Defaults to 0.1.
+            method (str, optional): _description_. Defaults to 'grid'.
+
+        method:
+            'random' - random distribution of figures
+            'perlin' - uniform distribution of figures by Perlin noise height map thresholding (works very slow, O(N^2))
+            'grid' - uniform distribution of figures by grid
+        """
         self.field = field
         self.types = types
         self.avg_size = avg_size
@@ -30,9 +47,10 @@ class SpriteGenerator:
         # 'normal' - generate triangles with normal distribution of area of the triangle
         self.triangle_mode = 'normal'
         # Figure distribution
-        # 'random' - random distribution of triangles
-        # 'uniform' - uniform distribution of triangles by Perlin noise height map thresholding
-        self.distribution = 'uniform'
+        # 'random' - random distribution of figures
+        # 'perlin' - uniform distribution of figures by Perlin noise height map thresholding
+        # 'grid' - uniform distribution of figures by grid
+        self.distribution = method
     
     def gen_point_around(self, center: Point, avg_size: float) -> Point:
         angle = random() * pi * 2
@@ -99,7 +117,11 @@ class SpriteGenerator:
     def generate_sprites(self, n: int) -> list[Sprite]:
         if self.distribution == 'random':
             return [make_sprite(self.gen_figure()) for i in range(n)]
-        else:
-            centers = fill_dots(self.field, n)
+        elif self.distribution == 'perlin':
+            centers = fill_dots_perlin(self.field, n)
             self.avg_size = mean_min_distance(centers) * 0.7
+            return [make_sprite(self.gen_figure(center)) for center in centers]
+        elif self.distribution == 'grid':
+            centers = fill_dots_grid(self.field, n)
+            self.avg_size = mean_min_distance(centers) * 0.6
             return [make_sprite(self.gen_figure(center)) for center in centers]

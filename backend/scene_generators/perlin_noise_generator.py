@@ -4,8 +4,6 @@ from perlin_noise import PerlinNoise
 from random import randint
 from math import ceil
 
-import matplotlib.pyplot as plt
-
 from backend.geometry import Rectangle, Point
 
 def ternal_search(f: Callable[[float], float], a: float, b: float, eps: float = 1e-6) -> float:
