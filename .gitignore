@@ -13,3 +13,6 @@ logs/*
 
 # profiling files
 profiling/*
+
+# tests
+test.py

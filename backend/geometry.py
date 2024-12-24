@@ -456,6 +456,12 @@ class Rectangle(Figure):
     def size(self) -> Point:
         return self.top_right - self.bottom_left
     
+    def width(self) -> float:
+        return self.top_right.x - self.bottom_left.x
+    
+    def height(self) -> float:
+        return self.top_right.y - self.bottom_left.y
+    
     def vertexes(self, quality: int = 0) -> list[Point]:
         return self.corners()
     

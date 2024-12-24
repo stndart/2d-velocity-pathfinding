@@ -15,5 +15,5 @@ def main(core: Core):
 
 if __name__ == '__main__':
     back = Core()
-    generate_launch(back, launch_configuration=5, gen_configuration=20, generate=True)
+    generate_launch(back, launch_configuration=-1, gen_configuration=10, generate=True)
     main(back)
