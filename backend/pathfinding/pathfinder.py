@@ -6,6 +6,18 @@ class Pathfinder:
     
     def find_path(self, start: Vertex, end: Vertex) -> list[Vertex]:
         return []
+    
+    def update_shortest_paths(self, start: Vertex):
+        """
+        Updates shortest paths from start to all other vertexes in the graph
+        """
+        pass
+
+    def preprocess_paths(self):
+        """
+        Makes preprocessing if algorithm requires it
+        """
+        pass
 
 class Dijkstra(Pathfinder):
     def __init__(self, g: Graph):
@@ -102,3 +114,27 @@ class Floyd(Pathfinder):
 
         path.insert(0, start)
         return path
+    
+    def update_shortest_paths(self, start: Vertex):
+        """
+        Updates shortest paths from start to all other vertexes in the graph
+        """
+
+        if start not in self.graph.vertexes:
+            raise RuntimeError("Vertex not in graph")
+
+        if start not in self.dist:
+            self.dist[start] = {v: float('inf') for v in self.graph.vertexes}
+            self.pred[start] = {v: None for v in self.graph.vertexes}
+            self.dist[start][start] = 0
+
+            for e in start.edges:
+                v = e.other(start)
+                self.dist[start][v] = e.cost
+                self.pred[start][v] = start
+
+        for i in self.graph.vertexes:
+            for j in self.graph.vertexes:
+                if self.dist[i][j] > self.dist[i][start] + self.dist[start][j]:
+                    self.dist[i][j] = self.dist[i][start] + self.dist[start][j]
+                    self.pred[i][j] = self.pred[start][j]

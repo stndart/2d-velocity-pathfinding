@@ -64,6 +64,25 @@ def generate_launch(back: Core, launch_configuration: int = 0, generate: bool = 
             back.add_sprite(tri2)
             back.add_sprite(tria)
             #back.add_sprite(c2)
+        
+        elif gen_configuration == 5:
+            # Triangle: [<13.820, 4.935>, <8.555, 4.226>, <10.510, 0.439>]
+            # Triangle: [<13.247, 11.229>, <8.144, 11.560>, <6.682, 9.886>]
+    
+            t1 = make_sprite(Triangle(
+                Point(13.820, 4.935),
+                Point(8.555, 4.226),
+                Point(10.510, 0.439)
+            ))
+            t2 = make_sprite(Triangle(
+                Point(13.247, 11.229),
+                Point(8.144, 11.560),
+                Point(6.682, 9.886)
+            ))
+
+            back.add_sprite(t1)
+            back.add_sprite(t2)
+            
     else:
         if gen_configuration == 0:
             sprites = SpriteGenerator(Rectangle(Point(-10, -15), Point(30, 15)), av_size=5).generate_sprites(5)
@@ -107,7 +126,7 @@ def generate_launch(back: Core, launch_configuration: int = 0, generate: bool = 
         back.add_sprite(GS)
     
     elif launch_configuration == 3:
-        start, dest = Point(-1, 0), Point(4, 7)
+        start, dest = Point(-1, 0), Point(16, 11)
         pathfinder = QuadPathfinder(back.quadtree)
         
         ts = time()
@@ -120,7 +139,7 @@ def generate_launch(back: Core, launch_configuration: int = 0, generate: bool = 
         back.add_sprite(gs)
     
     elif launch_configuration == 4:
-        start, dest = Point(-1, 0), Point(10, 7)
+        start, dest = Point(-1, 0), Point(16, 11)
         pathfinder = QuadPathfinder(back.quadtree)
         
         ts = time()

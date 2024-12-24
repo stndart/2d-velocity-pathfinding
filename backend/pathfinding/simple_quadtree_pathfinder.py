@@ -12,7 +12,11 @@ from backend.sprites import make_sprite
 from .graph import GraphEdge as Edge
 from .buildgraph import VertMode
 
-class QuadPathfinder(Dijkstra):
+# For profiling purposes
+import cProfile
+import pstats
+
+class SimpleQuadPathfinder(Dijkstra):
     def __init__(self, quadtree: QuadTree):
         self.quadtree = quadtree
         self.vertex_dict: dict[QuadTree, list[Vertex]]
@@ -61,28 +65,15 @@ class QuadPathfinder(Dijkstra):
         
         print(f'approx is {len(start_vertices)}x{len(end_vertices)}={len(start_vertices) * len(end_vertices)}')
 
-        # temporarily adding the start and goal vertices to the graph
-        start_v = Vertex(start)
-        goal_v = Vertex(goal)
-        self.graph.add_vertex(start_v)
-        self.graph.add_vertex(goal_v)
-
-        for sv in start_vertices:
-            self.graph.add_edge(Edge(start_v, sv, start_v.coords.distance_to(sv.coords)))
-        for ev in end_vertices:
-            self.graph.add_edge(Edge(ev, goal_v, goal_v.coords.distance_to(ev.coords)))
-        
-        self.update_shortest_paths(start_v)
-        self.update_shortest_paths(goal_v)
-
-        shortest_path = super().find_path(start_v, goal_v)
-        shortest_path_len = self.find_path_length(shortest_path, start_v, goal_v)
-
-        ## removing the start and goal vertices from the graph
-        #self.graph.remove_vertex(start_v)
-        #self.graph.remove_vertex(goal_v)
-        ## updating the shortest paths again
-        #self.preprocess_paths()
+        shortest_path = []
+        shortest_path_len = float('inf')
+        for start_v in start_vertices:
+            for end_v in end_vertices:
+                path: list[Vertex] = super().find_path(start_v, end_v)
+                new_path_len = self.find_path_length(path, Vertex(start), Vertex(goal)) if path else float('inf')
+                if new_path_len < shortest_path_len:
+                    shortest_path = path
+                    shortest_path_len = new_path_len
         
         #print('shortest path length:', shortest_path_len)
         #print("shortest path:", shortest_path)

@@ -97,8 +97,12 @@ class Graph:
         self.vertexes.add(vertex)
         
     def remove_vertex(self, vertex: GraphVertex):
+        others: list[GraphVertex] = []
         for e in vertex.edges:
             e.other(vertex).remove_edge_to(vertex)
+            others.append(e.other(vertex))
+        for oth in others:
+            vertex.remove_edge_to(oth)
         self.vertexes.remove(vertex)
     
     @dispatch(GraphVertex, GraphVertex, cost=float)

@@ -10,7 +10,7 @@ class Core(Overseer):
         self._agents: list[Agent] = []
         
         self.quadtree = QuadTree(Rectangle(Point(-10, -10), Point(20, 20)))
-        #self.quadtree = QuadTree(Rectangle(Point(0, 0), Point(20, 20)))
+        self.quadtree = QuadTree(Rectangle(Point(-5, -5), Point(20, 20)))
         self.pathfinder = None
     
     def add_sprite(self, f: Sprite):
