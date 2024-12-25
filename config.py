@@ -1,6 +1,6 @@
 app_name = 'AutoFly'
 
-default_window_size = [600, 160, 720, 480]
+default_window_size = [600, 160, 1000, 900]
 
 menu_tabs = {
     "Show log": ("show_log", 'action'),

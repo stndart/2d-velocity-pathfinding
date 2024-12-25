@@ -24,7 +24,6 @@ class MainWindow(QMainWindow):
         self.backend_core = core
         self.init_ui()
         
-        
         self.target_fps = 60
         self.display_thread = Thread(name='MainWindow::display_thread', target=MainWindow.display_thread_fun, args=(weakref.proxy(self), self.target_fps))
         self.display_thread_active = True

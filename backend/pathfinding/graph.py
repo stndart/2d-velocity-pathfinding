@@ -26,7 +26,7 @@ class GraphVertex:
         Adds an edge to this vertex's edge list.
         If vertices are already connected, overwrites edge cost.
         """
-        new_edge = GraphEdge(self, other)
+        new_edge = GraphEdge(self, other, cost=cost)
         self.edges[new_edge] = cost
     
     def has_edge_to(self, other: 'GraphVertex'):
@@ -114,8 +114,8 @@ class Graph:
         v2.add_edge_to(v1, cost)
     
     @dispatch(GraphEdge, cost=float)
-    def add_edge(self, e: GraphEdge, cost: float = 1.0):
-        self.add_edge(e.v1, e.v2, cost=cost)
+    def add_edge(self, e: GraphEdge):
+        self.add_edge(e.v1, e.v2, cost=e.cost)
     
     def has_edge(self, v1: GraphVertex, v2: GraphVertex):
         return v1.has_edge_to(v2)
