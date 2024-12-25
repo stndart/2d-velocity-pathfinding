@@ -45,8 +45,10 @@ class Waypoint(Vertex):
     def __repr__(self):
         return self.coords.__repr__()
 
-# returns True if p collides with anything in qtree
 def check_collisions(qtree: QuadTree, p: Point|Line) -> bool:
+    """
+    returns True if p collides with anything in qtree
+    """
     ts = make_sprite(p)  # Eeh, but ok
     for s in qtree.get_collision_candidates(ts):
         if ts.collision_shape.has_intersect(s.collision_shape):

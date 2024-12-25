@@ -95,7 +95,8 @@ def pregenerated_sprites(back: Core, gen_configuration: int = 0) -> None:
         back.add_sprite(t2)
     
 
-def generate_launch(back: Core, launch_configuration: int = 0, generate: bool = False, gen_configuration: int = 0) -> None:
+def generate_launch(back: Core, launch_configuration: int = 0, generate: bool = False, gen_configuration: int = 0,
+                    pathfinder_algorithm: str = None) -> None:
     if not generate:
         pregenerated_sprites(back, gen_configuration)
     else:
@@ -134,7 +135,9 @@ def generate_launch(back: Core, launch_configuration: int = 0, generate: bool = 
     # find a path from start to dest using the quadtree dijkstra pathfinder, also displays the graph
     elif launch_configuration == 3:
         start, dest = Point(-1, 0), Point(16, 11)
-        back.pathfinder = QuadPathfinder(back.quadtree)
+        if not pathfinder_algorithm:
+            pathfinder_algorithm = 'dijkstra'
+        back.pathfinder = QuadPathfinder(back.quadtree, algorithm=pathfinder_algorithm)
         
         ts = time()
         path = [start] + back.pathfinder.find_path(start, dest) + [dest]
@@ -147,23 +150,40 @@ def generate_launch(back: Core, launch_configuration: int = 0, generate: bool = 
     # find a path from start to dest using the quadtree dijkstra pathfinder
     elif launch_configuration == 4:
         start, dest = Point(-1, 0), Point(16, 11)
-        back.pathfinder = QuadPathfinder(back.quadtree)
+        if not pathfinder_algorithm:
+            pathfinder_algorithm = 'dijkstra'
+        back.pathfinder = QuadPathfinder(back.quadtree, algorithm=pathfinder_algorithm)
         
         ts = time()
         path = [start] + back.pathfinder.find_path(start, dest) + [dest]
         print(f"Searching path took {time() - ts: .2f}s")
         #print('path', path)
         back.add_sprite(Sprite(Path(path), None))
-    # find a path from start to dest using the quadtree A* pathfinder, also displays the graph
-    elif launch_configuration == 6:
+        
+    elif launch_configuration == 5:
         start, dest = Point(-1, 0), Point(16, 11)
-        back.pathfinder = QuadPathfinder(back.quadtree, algorithm='A*')
+        if not pathfinder_algorithm:
+            pathfinder_algorithm = 'dijkstra'
+        
         
         ts = time()
-        path = [start] + back.pathfinder.find_path(start, dest) + [dest]
-        print(f"Searching path took {time() - ts: .2f}s")
-        #print('path', path)
+        graph, vertex_dict = build_graph_on_quadtree(back.quadtree, mode=VertMode.ALL, return_vertex_dict=True)
+        print(f'Building quadtree graph of {len(graph.vertexes)} vertices took {time() - ts: .2f}s')
+        
+        p1 = QuadPathfinder(back.quadtree, algorithm='Theta*', graph=graph, vertex_dict=vertex_dict)
+        p2 = QuadPathfinder(back.quadtree, algorithm='A*', graph=graph, vertex_dict=vertex_dict)
+        
+        print(f"\n========   {pathfinder_algorithm}   ========")
+        ts = time()
+        path = [start] + p1.find_path(start, dest) + [dest]
+        print(f"Searching path took {time() - ts: .2f}s for {pathfinder_algorithm}")
+        print('path', path)
         back.add_sprite(Sprite(Path(path), None))
         
-        gs = GraphSprite(back.pathfinder.graph.graph)
-        back.add_sprite(gs)
+        print(f"\n========   A*   ========")
+        ts = time()
+        path = [start] + p2.find_path(start, dest) + [dest]
+        print(f"Searching path took {time() - ts: .2f}s for A*")
+        print('path', path)
+        back.add_sprite(Sprite(Path(path), None))
+        

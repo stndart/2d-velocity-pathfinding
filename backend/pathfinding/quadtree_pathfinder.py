@@ -1,25 +1,29 @@
 from time import time
 from typing import Optional
 
-from .pathfinder import Dijkstra, Floyd, Pathfinder
 from .graph import Graph
 from .quadtree import QuadTree
 from .buildgraph import build_graph_on_quadtree, check_collisions, build_vertexes_from_rect
 from .buildgraph import Waypoint as Vertex
 
+from .pathfinder import Dijkstra, Floyd, Pathfinder
+from .astar_pathfinder import AStar
+from .thetastar_pathfinder import ThetaStar
+
 from backend.geometry import Point, Line
 from backend.sprites import make_sprite
-
 from .graph import GraphEdge as Edge
 from .buildgraph import VertMode
 
 class QuadPathfinder:
-    def __init__(self, quadtree: QuadTree, algorithm: str = 'dijkstra'):
+    def __init__(self, quadtree: QuadTree, algorithm: str = 'dijkstra',
+                 graph: Optional[Graph] = None, vertex_dict: Optional[dict[QuadTree, list[Vertex]]] = None):
         """_summary_
 
         Args:
             quadtree (QuadTree): _description_
             algorithm (str, optional): _description_. Defaults to 'dijkstra'.
+            graph, vertex_dict: if given, will skip build_graph_on_quadte
         
         algorhitm:
             'dijkstra' - Dijkstra's algorithm
@@ -27,26 +31,28 @@ class QuadPathfinder:
             'A*' - A* algorithm (not implemented)
             'Theta*' - Theta* algorithm, an A* improvement (not implemented)
         """
-        self.graph_class: Optional[type] = None
-        if algorithm == 'dijkstra':
-            self.graph_class = Dijkstra
-        elif algorithm == 'floyd':
-            self.graph_class = Floyd
-        elif algorithm == 'A*':
-            raise NotImplementedError('A* algorithm is not implemented')
-        elif algorithm == 'Theta*':
-            raise NotImplementedError('Theta* algorithm is not implemented')
-        else:
-            raise ValueError('Unknown algorithm')
 
         self.quadtree = quadtree
         self.vertex_dict: dict[QuadTree, list[Vertex]]
 
-        ts = time()
-        graph, self.vertex_dict = build_graph_on_quadtree(quadtree, mode=VertMode.ALL, return_vertex_dict=True)
-        print(f'Building quadtree graph of {len(graph.vertexes)} vertices took {time() - ts: .2f}s')
+        if not graph or not vertex_dict:
+            ts = time()
+            graph, vertex_dict = build_graph_on_quadtree(quadtree, mode=VertMode.ALL, return_vertex_dict=True)
+            print(f'Building quadtree graph of {len(graph.vertexes)} vertices took {time() - ts: .2f}s')
+        self.vertex_dict = vertex_dict
         
-        self.graph = self.graph_class(graph)
+
+        self.graph: Pathfinder
+        if algorithm == 'dijkstra':
+            self.graph = Dijkstra(graph)
+        elif algorithm == 'floyd':
+            self.graph = Floyd(graph)
+        elif algorithm == 'A*':
+            self.graph = AStar(graph)
+        elif algorithm == 'Theta*':
+            self.graph = ThetaStar(graph, self.quadtree)
+        else:
+            raise ValueError(f"Unknown algorithm: {algorithm}\nAvailable algorithms are ['dijkstra', 'floyd', 'A*', 'Theta*']")
     
     def find_path_length(self, path: list[Vertex], start_v: Vertex, goal_v: Vertex) -> float:
         """
@@ -91,7 +97,7 @@ class QuadPathfinder:
         # Now we have to find the shortest path between start and goal vertices
         # using the Dijkstra algorithm
         
-        print(f'approx is {len(start_vertices)}x{len(end_vertices)}={len(start_vertices) * len(end_vertices)}')
+        # print(f'approx is {len(start_vertices)}x{len(end_vertices)}={len(start_vertices) * len(end_vertices)}')
 
         # temporarily adding the start and goal vertices to the graph
         start_v = Vertex(start)

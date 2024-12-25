@@ -22,7 +22,7 @@ class FieldDisplay(GridDisplay):
         super().__init__(parent)
         self.core = core
         
-        self.registered_items: dict[[bc.Figure|bc.Agent], QGraphicsItem]= dict()
+        self.registered_items: dict[bc.Figure|bc.Agent, QGraphicsItem]= dict()
 
         self.pen = QPen(Qt.black, 0.06)
         self.pen.setCapStyle(Qt.RoundCap)
