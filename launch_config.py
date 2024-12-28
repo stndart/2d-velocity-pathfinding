@@ -15,6 +15,8 @@ def generate_sprites(back: Core, gen_configuration: int = 0) -> None:
         sprites = SpriteGenerator(Rectangle(Point(-10, -15), Point(30, 15)), av_size=5).generate_sprites(5)
     elif gen_configuration == 1:
         sprites = SpriteGenerator(Rectangle(Point(0, 0), Point(15, 10)), avg_size=5).generate_sprites(3)
+    elif gen_configuration % 2 == 0:
+        sprites = SpriteGenerator(Rectangle(Point(0, 0), Point(15, 10)), avg_size=2, types = [Triangle, Circle]).generate_sprites(gen_configuration)
     else:
         sprites = SpriteGenerator(Rectangle(Point(0, 0), Point(15, 10)), avg_size=2, types = [Triangle]).generate_sprites(gen_configuration)
     
@@ -168,7 +170,6 @@ def generate_launch(back: Core, launch_configuration: int = 0, generate: bool = 
         start, dest = Point(-1, 0), Point(16, 11)
         if not pathfinder_algorithm:
             pathfinder_algorithm = 'dijkstra'
-        
         
         ts = time()
         graph, vertex_dict = build_graph_on_quadtree(back.quadtree, mode=VertMode.ALL, return_vertex_dict=True)

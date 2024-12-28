@@ -19,15 +19,7 @@ def main(core: Core):
 
 if __name__ == '__main__':
     back = Core()
-    generate_launch(back, launch_configuration=4, gen_configuration=1, generate=False,
+    generate_launch(back, launch_configuration=5, gen_configuration=10, generate=True,
                     pathfinder_algorithm='Theta*')
-    
-    sp = [c.collision_shape for c in back.sprites()][:4]
-    c1, c2, t1, t2 = sp
-    q = back.quadtree
-    pt = back.pathfinder
-    g = pt.graph.graph
-    p1, p2, p3 = t2.vertexes()
-    print(check_collisions(q, p3))
     
     main(back)

@@ -123,5 +123,5 @@ class SpriteGenerator:
             return [make_sprite(self.gen_figure(center)) for center in centers]
         elif self.distribution == 'grid':
             centers = fill_dots_grid(self.field, n)
-            self.avg_size = mean_min_distance(centers) * 0.6
+            self.avg_size = mean_min_distance(centers)# * 0.6
             return [make_sprite(self.gen_figure(center)) for center in centers]
