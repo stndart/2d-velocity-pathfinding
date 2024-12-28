@@ -40,7 +40,6 @@ class QuadPathfinder:
             graph, vertex_dict = build_graph_on_quadtree(quadtree, mode=VertMode.ALL, return_vertex_dict=True)
             print(f'Building quadtree graph of {len(graph.vertexes)} vertices took {time() - ts: .2f}s')
         self.vertex_dict = vertex_dict
-        
 
         self.graph: Pathfinder
         if algorithm == 'dijkstra':

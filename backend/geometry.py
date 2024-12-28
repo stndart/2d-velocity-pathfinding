@@ -43,6 +43,9 @@ class Figure:
     
     def set_vertexes(self, vs: list[Point]):
         pass
+
+    def mass_center(self):
+        return Point(0, 0)
     
     def __repr__(self):
         if self.vertexes() == []:
@@ -90,6 +93,9 @@ class Point:
     
     def vertexes(self, quality: int = 0) -> list[Point]:
         return [self]
+
+    def mass_center(self):
+        return self.copy()
     
     def move(self, shift: Point):
         self.x += shift.x
@@ -180,6 +186,9 @@ class Line:
         
     def copy(self):
         return Line(self.p1.copy(), self.p2.copy())
+
+    def mass_center(self):
+        return (self.p1 + self.p2) / 2
     
     def __repr__(self):
         return f'{self.__class__.__name__}: A={self.p1}, B={self.p2}'
@@ -279,11 +288,29 @@ class Circle(Figure):
     def __repr__(self):
         return f'{self.__class__.__name__}: C={self.center}, R={self.radius:.3f}'
     
-    def vertexes(self, quality: int = 0):
+    def _vertexes(self, quality: int = 0):
+        """
+        Returns N=quality vertices positioned on the circle
+        """
         angles = np.linspace(0, np.pi * 2, quality + 1)[:-1]
         px = self.center.x + np.cos(angles) * self.radius
         py = self.center.y + np.sin(angles) * self.radius
         return [Point(x, y) for x, y in zip(px, py)]
+
+    def vertexes(self, quality: int = 10):
+        """
+        Returns N=qulity vertices, positioned outside the circle:
+        Lines, connecting nearby points barely touch the circle
+        """
+        angles = np.linspace(0, np.pi * 2, quality + 1)[:-1]
+        beta = np.pi / quality
+        newrad = self.radius / np.cos(beta)
+        px = self.center.x + np.cos(angles) * newrad
+        py = self.center.y + np.sin(angles) * newrad
+        return [Point(x, y) for x, y in zip(px, py)]
+
+    def mass_center(self):
+        return self.center.copy()
 
     def set_vertexes(self, vs: list[Point]):
         raise NotImplementedError("Circle can't be set with vertexes")
@@ -356,6 +383,9 @@ class Triangle(Figure):
     
     def vertexes(self, quality: int = 0) -> list[Point]:
         return self.vertices
+
+    def mass_center(self):
+        return mean_points(self.vertexes())
     
     def set_vertexes(self, vs: list[Point]):
         self.vertices = vs.copy()
@@ -389,7 +419,7 @@ class Triangle(Figure):
             else:
                 return False
         elif isinstance(other, (Figure, Line)):
-            if any([not self.has_intersect(p) for p in other.vertexes()]):
+            if any([not self.contains(p) for p in other.vertexes()]):
                 return False
             return True
         
@@ -400,14 +430,17 @@ class Triangle(Figure):
         Checks if intersection of two figures is not empty
         """
         if isinstance(other, Point):
-            a, b, c = self.vertices
-            area_orig = self.area(a, b, c)
-            area1 = self.area(other, b, c)
-            area2 = self.area(a, other, c)
-            area3 = self.area(a, b, other)
-            return is_close(area_orig, area1 + area2 + area3)
+            dists = [side.distance(other) for side in self.edges()]
+            return all([d > EPS for d in dists]) or all([d < -EPS for d in dists])
         elif isinstance(other, Line):
-            return any([other.has_intersect(e) for e in self.edges()])
+            for e in self.edges():
+                if e.has_intersect(other):
+                    if e.distance(other.p1) < EPS and e.distance(other.p2) < EPS:
+                        # coinsiding lines don't count
+                        continue
+                    else:
+                        return True
+            return False
         elif isinstance(other, Circle):
             return self._intersects_circle(other)
         elif isinstance(other, Triangle):
@@ -464,6 +497,9 @@ class Rectangle(Figure):
     
     def vertexes(self, quality: int = 0) -> list[Point]:
         return self.corners()
+
+    def mass_center(self):
+        return mean_points(self.vertexes())
     
     def set_vertexes(self, vs: list[Point]):
         raise NotImplementedError("Rectangle can't be set with vertexes")
@@ -556,6 +592,9 @@ class Path(Figure):
     
     def vertexes(self, quality: int = 0):
         return list(self.points())
+
+    def mass_center(self):
+        return mean_points(self.vertexes())
 
     def points(self) -> Generator[Point, None, None]:
         for p in self.path:

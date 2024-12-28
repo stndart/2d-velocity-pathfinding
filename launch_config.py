@@ -37,10 +37,10 @@ def pregenerated_sprites(back: Core, gen_configuration: int = 0) -> None:
         back.add_sprite(c2)
     
     elif gen_configuration == 1:
-        c1 = make_sprite(Circle(3.725, 4.118, 0.735))
-        c2 = make_sprite(Circle(8.014, 4.526, 1.314))
-        t1 = make_sprite(Triangle(Point(4.766, 5.924), Point(7.126, 4.912), Point(6.125, 4.160)))
-        t2 = make_sprite(Triangle(Point(10.438, 6.877), Point(13.989, 6.716), Point(12.781, 9.415)))
+        c1 = make_sprite(Circle(3.725, 6.118, 3.235))
+        c2 = make_sprite(Circle(13.014, 3.526, 3.614))
+        t1 = make_sprite(Triangle(Point(7.266, 8.924), Point(10.726, 4.912), Point(7.615, 0.160)))
+        t2 = make_sprite(Triangle(Point(9.438, 13.677), Point(14.989, 9.716), Point(9.781, 6.415)))
         
         back.add_sprite(c1)
         back.add_sprite(c2)
@@ -125,6 +125,7 @@ def generate_launch(back: Core, launch_configuration: int = 0, generate: bool = 
         
         car.rotate(radians(-20))
         back.add_agent(car)
+    
     # build a graph on the quadtree and display the graph
     elif launch_configuration == 2:
         print(back.quadtree.print_tree(), '\n', '-'*30, '\n'*2)
@@ -132,6 +133,7 @@ def generate_launch(back: Core, launch_configuration: int = 0, generate: bool = 
         G = build_graph_on_quadtree(back.quadtree, mode=VertMode.ALL)
         GS = GraphSprite(G)
         back.add_sprite(GS)
+    
     # find a path from start to dest using the quadtree dijkstra pathfinder, also displays the graph
     elif launch_configuration == 3:
         start, dest = Point(-1, 0), Point(16, 11)
@@ -147,6 +149,7 @@ def generate_launch(back: Core, launch_configuration: int = 0, generate: bool = 
         
         gs = GraphSprite(back.pathfinder.graph.graph)
         back.add_sprite(gs)
+    
     # find a path from start to dest using the quadtree dijkstra pathfinder
     elif launch_configuration == 4:
         start, dest = Point(-1, 0), Point(16, 11)
@@ -160,6 +163,7 @@ def generate_launch(back: Core, launch_configuration: int = 0, generate: bool = 
         #print('path', path)
         back.add_sprite(Sprite(Path(path), None))
         
+    # find a path from start to dest using the quadtree A* and Theta* and compares them
     elif launch_configuration == 5:
         start, dest = Point(-1, 0), Point(16, 11)
         if not pathfinder_algorithm:

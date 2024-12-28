@@ -9,7 +9,7 @@ class Core(Overseer):
         self._sprites: list[Sprite] = []
         self._agents: list[Agent] = []
         
-        self.quadtree = QuadTree(Rectangle(Point(-10, -10), Point(20, 20)))
+        #self.quadtree = QuadTree(Rectangle(Point(-10, -10), Point(20, 20)))
         self.quadtree = QuadTree(Rectangle(Point(-5, -5), Point(20, 20)))
         self.pathfinder = None
     
@@ -19,7 +19,8 @@ class Core(Overseer):
     
     def sprites(self) -> list[Sprite]:
         for f in self._sprites:
-            yield f
+            if f is not None: ## TODO! WTF??
+                yield f
     
     def add_agent(self, a: Agent):
         self._agents.append(a)
