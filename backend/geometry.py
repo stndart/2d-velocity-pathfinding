@@ -299,9 +299,13 @@ class Circle(Figure):
 
     def vertexes(self, quality: int = 10):
         """
-        Returns N=qulity vertices, positioned outside the circle:
+        Returns N=quality vertices, positioned outside the circle:
         Lines, connecting nearby points barely touch the circle
+        quality should be >=3
         """
+        if quality < 3:
+            return self._vertexes()
+        
         angles = np.linspace(0, np.pi * 2, quality + 1)[:-1]
         beta = np.pi / quality
         newrad = self.radius / np.cos(beta)
