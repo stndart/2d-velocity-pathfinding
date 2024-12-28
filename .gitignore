@@ -10,3 +10,12 @@
 
 # logs
 logs/*
+
+# profiling files
+profiling/*
+
+# tests
+test.py
+
+# journal articles
+articles/*

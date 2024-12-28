@@ -5,7 +5,7 @@ from .graph import Graph
 from .graph import GraphVertex as Vertex
 from .graph import GraphEdge as Edge
 
-from backend.geometry import Point, Rectangle
+from backend.geometry import Point, Rectangle, Line
 from backend.sprites import Sprite
 
 SPLIT_CONST = 2
@@ -18,11 +18,23 @@ def split_rectangle(rect: Rectangle, N: int = SPLIT_CONST):
             bot_left = rect.bottom_left + Point(size.x * ix, size.y * iy)
             yield ix, iy, Rectangle(bot_left, bot_left + size)
 
+def opposite_direction(direction: str) -> str:
+    all_directions = ['left', 'right', 'top', 'bottom']
+    opposite = ['right', 'left', 'bottom', 'top']
+    if direction in all_directions:
+        return opposite[all_directions.index(direction)]
+    else:
+        raise ValueError('Invalid direction')
+
+def opposite_corner(corner: tuple[str]) -> tuple[str]:
+    return tuple(opposite_direction(d) for d in corner)
+
 class QuadTree:
-    def __init__(self, rect: Rectangle):
+    def __init__(self, rect: Rectangle, parent: Optional['QuadTree'] = None):
         assert rect.size().x == rect.size().y
         
         self.rectangle = rect
+        self.parent = parent
         self.sprites: set[Sprite] = set()
         self.children: list[QuadTree] = [None] * SPLIT_CONST ** 2
     
@@ -56,12 +68,95 @@ class QuadTree:
         yield self
         for ch in self.iter_children():
             yield from ch.dfs()
+
+    def which_corner(self, q: 'QuadTree') -> tuple[str]:
+        """
+        for a given child QuadTree returns the corner it is located in
+        if q is not a child, returns empty tuple
+        """
+        if self.childless():
+            return ()
+        for i, ch in enumerate(self.children):
+            if ch is q:
+                return [('top', 'left'), ('top', 'right'), ('bottom', 'left'), ('bottom', 'right')][i]
+        return ()
+
+    def get_side_children(self, side: str) -> Generator['QuadTree', None, None]:
+        """
+        Returns children of the QuadTree that are located on the specified side.
+        side: str = 'left' | 'right' | 'top' | 'bottom'
+        """
+        if self.childless():
+            return
+        if side == 'left':
+            for i in range(0, SPLIT_CONST ** 2, SPLIT_CONST):
+                yield self.children[i]
+        elif side == 'right':
+            for i in range(SPLIT_CONST - 1, SPLIT_CONST ** 2, SPLIT_CONST):
+                yield self.children[i]
+        elif side == 'top':
+            for i in range(SPLIT_CONST):
+                yield self.children[i]
+        elif side == 'bottom':
+            for i in range(SPLIT_CONST ** 2 - SPLIT_CONST, SPLIT_CONST ** 2):
+                yield self.children[i]
+        else:
+            raise ValueError('Invalid side')
     
+    def get_side_grandchildren(self, side: str, edge: Optional[Line] = None) -> Generator['QuadTree', None, None]:
+        """
+        Returns all chilrden of the Quadtree and it's children that are located on the specified side.
+        side: str = 'left' | 'right' | 'top' | 'bottom'
+        If edge provided, returns only children, which rectangle contain the edge.
+        """
+        if self.childless():
+            return
+        for ch in self.get_side_children(side):
+            if ch is not None:
+                if edge is not None and not ch.rectangle.has_intersect(edge):
+                    continue
+                yield ch
+                yield from ch.iter_children()
+    
+    def find_adjacent(self, direction: str = 'all', edge: Optional[Line] = None) -> Generator['QuadTree', None, None]:
+        """
+        Returns adjacent QuadTree in specified direction.
+        direction: str = 'all' | 'left' | 'right' | 'top' | 'bottom'
+        If edge is provided, returns adjacent QuadTrees, which rectangles contain the edge.
+        """
+
+        if self.parent is None:
+            return
+        
+        if direction == 'all':
+            for direction in ['left', 'right', 'top', 'bottom']:
+                yield from self.find_adjacent(direction)
+            return
+
+        # populate edge: Line if not provided
+        available_directions = ['left', 'top', 'right', 'bottom']
+        if edge is None:
+            if direction in available_directions:
+                edge = self.rectangle.edges()[available_directions.index(direction)]
+            else:
+                raise ValueError('Invalid direction')
+
+        if direction in self.parent.which_corner(self):
+            yield from self.parent.find_adjacent(direction, edge)
+        else:
+            for q in self.parent.children:
+                if q is None:
+                    continue
+                # skip current QuadTree and the one in the opposite corner
+                if self.parent.which_corner(q) in [self.parent.which_corner(self), opposite_corner(self.parent.which_corner(self))]:
+                    continue
+                yield from q.get_side_grandchildren(opposite_direction(direction), edge)
+
     def init_children(self):
         for ix, iy, rect in split_rectangle(self.rectangle):
             i = ix + iy * SPLIT_CONST
             if self.children[i] is None:
-                self.children[i] = QuadTree(rect)
+                self.children[i] = QuadTree(rect, self)
     
     def clear_children(self):
         for i, ch in enumerate(self.children):
@@ -70,6 +165,11 @@ class QuadTree:
             if len(ch.sprites) == 0 and ch.childless():
                 del ch
                 self.children[i] = None
+    
+    def recursive_parents(self) -> Generator['QuadTree', None, None]:
+        if self.parent is not None:
+            yield self.parent
+            yield from self.parent.recursive_parents()
 
     def optimize_tree(self) -> set[Sprite]:
         lost_by_children = set()
