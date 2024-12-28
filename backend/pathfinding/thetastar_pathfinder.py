@@ -1,10 +1,9 @@
-import heapq
-
 from .pathfinder import Pathfinder
 from .graph import Graph
 from .quadtree import QuadTree
 from .buildgraph import Waypoint as Vertex, check_collisions
 from backend.geometry import Point, Line
+from backend.algo import PriorityQueue
 
 class ThetaStar(Pathfinder):
     def __init__(self, g: Graph, quadtree: QuadTree):
@@ -32,12 +31,12 @@ class ThetaStar(Pathfinder):
         self.came_from: dict[Vertex, Vertex] = {}
         self.came_from[start] = start
         
-        self.open_set: list[tuple[float, Vertex]] = []
-        heapq.heappush(self.open_set, (self.f_score[start], start))
+        self.open_set: PriorityQueue[Vertex] = PriorityQueue()
+        self.open_set.insert(start, self.f_score[start])
         self.closed_set: set[Vertex] = set()
 
         while self.open_set:
-            current: Vertex = heapq.heappop(self.open_set)[1]
+            current = self.open_set.extract_minimum()
 
             if current == end:
                 return self.reconstruct_path(current)
@@ -55,12 +54,6 @@ class ThetaStar(Pathfinder):
                     self.update_vertex(current, neighbor)
 
         return []
-
-    def find_in_open_set(self, val: Vertex):
-        for i in range(len(self.open_set)):
-            if self.open_set[i][1] == val:
-                return i
-        return -1
 
     def update_vertex(self, current: Vertex, neighbor: Vertex) -> None:
         # This part of the algorithm is the main difference between A* and Theta*
@@ -80,11 +73,8 @@ class ThetaStar(Pathfinder):
             self.g_score[neighbor] = self.g_score[s] + cost
             self.came_from[neighbor] = s
             
-            i = self.find_in_open_set(neighbor)
-            if i != -1:
-                self.open_set.pop(i)
-                heapq.heapify(self.open_set)  # ???
-            heapq.heappush(self.open_set, (self.g_score[neighbor] + self.heuristic(neighbor), neighbor))
+            self.open_set.discard(neighbor)
+            self.open_set.insert(neighbor, self.g_score[neighbor] + self.heuristic(neighbor))
 
     def line_of_sight(self, start: Vertex, end: Vertex):
         return not check_collisions(self.quadtree, Line(start.coords, end.coords))

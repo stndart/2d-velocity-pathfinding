@@ -16,3 +16,6 @@ profiling/*
 
 # tests
 test.py
+
+# journal articles
+articles/*
