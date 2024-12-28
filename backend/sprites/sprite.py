@@ -7,7 +7,8 @@ class Sprite:
         self.mesh: Figure = mesh
         self.collision_shape: Figure = collision_shape
         if self.collision_shape is not None:
-            self.mass_center: Point = mean_points(self.collision_shape.vertexes(quality=4))
+            # self.mass_center: Point = mean_points(self.collision_shape.vertexes(quality=4))
+            self.mass_center: Point = self.collision_shape.mass_center()
         else:
             self.mass_center = Point(0, 0)
         self.static = static
